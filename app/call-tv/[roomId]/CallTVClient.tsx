@@ -54,7 +54,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
   const [error, setError] = React.useState<string | null>(null)
   const [isFullscreen, setIsFullscreen] = React.useState(false)
   const [duration, setDuration] = React.useState(0)
-  const durationRef = React.useRef<NodeJS.Timeout>()
+  const durationRef = React.useRef<NodeJS.Timeout | null>(null)
 
   // Screen sharing state
   const [screenShareTrack, setScreenShareTrack] = React.useState<MediaStreamTrack | null>(null)
