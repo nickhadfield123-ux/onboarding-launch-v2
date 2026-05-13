@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rizz · Resourceful · Onboarding</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:system-ui,-apple-system,sans-serif}
+
+.ipad-frame{display:flex;flex-direction:column;width:100vw;height:100vh;background:#fff;overflow:hidden}
+.ipad-topbar{height:48px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 24px;flex-shrink:0;z-index:100}
+.ipad-body{display:flex;flex:1;overflow:hidden;position:relative}
+.ipad-right-frame{position:absolute;right:0;top:48px;bottom:0;width:300px;background:#fff;border-left:1px solid #e5e7eb;display:flex;flex-direction:column;z-index:10;transition:width .35s,opacity .35s}
+.ipad-right-frame.collapsed{width:0;min-width:0;opacity:0}
+.ipad-center{flex:1;overflow:hidden}
+
+/* Animations */
+@keyframes rp{0%,100%{opacity:.35;transform:translate(-50%,-50%) scale(1)}50%{opacity:.85;transform:translate(-50%,-50%) scale(1.04)}}
+@keyframes gi{0%,100%{filter:drop-shadow(0 0 10px rgba(108,66,194,.35))}50%{filter:drop-shadow(0 0 22px rgba(108,66,194,.65)) drop-shadow(0 0 14px rgba(45,158,107,.3))}}
+@keyframes gi-conjure{0%{filter:drop-shadow(0 0 8px rgba(108,66,194,.3))}30%{filter:drop-shadow(0 0 38px rgba(108,66,194,1)) drop-shadow(0 0 28px rgba(45,158,107,.8))}100%{filter:drop-shadow(0 0 10px rgba(108,66,194,.35))}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes bob-conjure{0%{transform:translateY(0)}30%{transform:translateY(-14px) scale(1.06)}100%{transform:translateY(0)}}
+@keyframes antb{0%,100%{transform:rotate(-8deg) translateY(0)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave-fast{0%,100%{transform:rotate(-22deg)}50%{transform:rotate(22deg) translateY(-5px)}}
+@keyframes ebl{0%,88%,100%{transform:scaleY(1)}94%{transform:scaleY(.06)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
+@keyframes earnedPulse{0%,100%{box-shadow:inset 2px 0 0 #534AB7}40%{box-shadow:inset 2px 0 0 #534AB7,0 0 0 5px rgba(83,74,183,.18)}}
+
+/* App */
+.app{display:flex;width:100%;height:100%;overflow:hidden}
+
+/* White left sidebar */
+.sidebar{position:absolute;left:0;top:0;bottom:0;width:260px;background:#fff;border-right:.5px solid rgba(0,0,0,.07);display:flex;flex-direction:column;overflow-y:auto;z-index:10}
+.sb-logo{display:flex;align-items:center;gap:7px;font-size:14px;font-weight:500;color:#1a1a1a;padding:14px 14px 12px}
+.sb-logo-mark{width:20px;height:20px;border-radius:50%;background:#ede8ff;border:.5px solid #b8b0f0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#534AB7}
+.sb-sec{font-size:9px;font-weight:500;color:#bbb;text-transform:uppercase;letter-spacing:.07em;padding:8px 14px 4px}
+.sb-item{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;cursor:pointer;transition:background .12s;border-left:2px solid transparent}
+.sb-item:hover{background:#f5f3ff}
+.sb-item.active-link{background:#f0eeff;border-left-color:#534AB7}
+.sb-item.earned{background:#f0eeff;border-left-color:#534AB7;animation:earnedPulse 1.8s ease-out}
+.sb-item-l{display:flex;align-items:center;gap:8px;font-size:12px;color:#444}
+.sb-item-l i{font-size:14px;color:#888;width:16px;text-align:center}
+.sb-item-l.purple i{color:#534AB7}
+.sb-badge{font-size:10px;color:#bbb}
+.sb-badge.dot-green{width:7px;height:7px;border-radius:50%;background:#1D9E75;display:inline-block;animation:pulse 2s infinite}
+.sb-badge.num{background:#ede8ff;color:#534AB7;padding:1px 6px;border-radius:8px;font-size:10px}
+.sb-divider{height:.5px;background:rgba(0,0,0,.06);margin:5px 0}
+.step-item{display:flex;align-items:center;gap:8px;padding:6px 14px}
+.step-dot{width:16px;height:16px;border-radius:50%;border:.5px solid #ddd;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:8px;color:#bbb}
+.step-dot.done{background:#1D9E75;border-color:#1D9E75;color:#fff}
+.step-dot.active{background:#534AB7;border-color:#534AB7;color:#fff}
+.step-text{color:#999;font-size:11px}
+.step-text.done{text-decoration:line-through}
+.step-text.active{color:#333;font-weight:500}
+.sb-person{display:flex;align-items:center;gap:8px;padding:6px 14px;cursor:pointer}
+.sb-person:hover{background:#f5f3ff}
+.sb-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0}
+.sb-person-name{font-size:11px;color:#444}
+.sb-person-sub{font-size:10px;color:#bbb}
+
+/* Dark canvas */
+.canvas{margin-left:260px;flex:1;background:#0d1322;display:flex;flex-direction:column;overflow:hidden;position:relative;max-width:calc(100vw - 560px)}
+.canvas-top{display:flex;align-items:center;padding:9px 13px;border-bottom:.5px solid rgba(255,255,255,.06);flex-shrink:0;gap:4px}
+.cpill{font-size:10px;padding:3px 9px;border-radius:20px;border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.38);background:none;cursor:pointer;transition:all .2s}
+.cpill:hover,.cpill.active-pill{border-color:rgba(127,119,221,.5);color:#AFA9EC;background:rgba(127,119,221,.1)}
+.cpill.live{border-color:rgba(29,158,117,.35);color:#5DCAA5}
+.cpill.live.active-pill{border-color:rgba(29,158,117,.6)}
+
+/* Canvas body: section panel (LEFT) | Rizz col (RIGHT) */
+.canvas-body{display:flex;flex:1;overflow:hidden;min-height:0}
+
+/* Section panel slides in from LEFT */
+.section-panel{width:0;flex-shrink:0;overflow:hidden;background:#090f1c;border-right:.5px solid rgba(255,255,255,.06);display:flex;flex-direction:column;transition:width .75s cubic-bezier(.4,0,.15,1)}
+.section-panel.open{width:60%}
+.sp-nav{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:.5px solid rgba(255,255,255,.07);flex-shrink:0}
+.sp-title{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:rgba(255,255,255,.82)}
+.sp-title i{font-size:13px;color:#AFA9EC}
+.sp-back{font-size:10px;color:rgba(255,255,255,.25);background:none;border:none;cursor:pointer;padding:3px 8px;border-radius:5px;display:flex;align-items:center;gap:4px;transition:color .15s}
+.sp-back:hover{color:rgba(255,255,255,.6)}
+.sp-scroll{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px}
+.sp-scroll::-webkit-scrollbar{width:2px}
+.sp-scroll::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+/* Scoped Rizz log inside section */
+.section-log{flex-shrink:0;border-top:.5px solid rgba(255,255,255,.06);padding:8px 12px;display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto}
+.section-log::-webkit-scrollbar{width:2px}
+.section-log::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+.sc-log-entry{background:rgba(83,74,183,.1);border:.5px solid rgba(127,119,221,.18);border-radius:8px;padding:7px 10px;font-size:11px;color:rgba(255,255,255,.6);line-height:1.5;display:flex;gap:7px;animation:fadeUp .25s ease-out}
+.sc-log-entry i{font-size:11px;color:#7F77DD;flex-shrink:0;margin-top:1px}
+
+/* Rizz column — always present, RIGHT side */
+.rizz-col{display:flex;flex-direction:column;flex:1;min-width:200px;overflow:hidden;background:#0d1322}
+
+/* Canvas-top back pill */
+.cpill-back{border-color:rgba(127,119,221,.5)!important;color:#AFA9EC!important;background:rgba(127,119,221,.12)!important;font-weight:500}
+.cpill-back:hover{background:rgba(127,119,221,.22)!important}
+
+/* Big back-to-Rizz button */
+.back-to-rizz{display:none;cursor:pointer;padding:10px 12px;border-bottom:.5px solid rgba(127,119,221,.2);background:linear-gradient(135deg,rgba(83,74,183,.18),rgba(45,158,107,.08));flex-shrink:0;transition:background .2s}
+.back-to-rizz:hover{background:linear-gradient(135deg,rgba(83,74,183,.28),rgba(45,158,107,.14))}
+.back-to-rizz.show{display:block}
+.back-rizz-inner{display:flex;align-items:center;gap:10px}
+.back-rizz-avatar{width:32px;height:32px;border-radius:50%;background:rgba(83,74,183,.25);border:1px solid rgba(127,119,221,.3);display:flex;align-items:center;justify-content:center;flex-shrink:0;animation:bob 2.8s ease-in-out infinite}
+.back-rizz-text{display:flex;flex-direction:column;gap:1px}
+.back-rizz-label{font-size:13px;font-weight:600;color:#CECBF6;letter-spacing:.01em}
+.back-rizz-sub{font-size:10px;color:rgba(127,119,221,.55)}
+
+/* Hint row */
+.hint-row{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;padding:8px 12px 4px;flex-shrink:0;transition:opacity .3s;max-width:750px;margin:0 auto 16px auto}
+.hint{font-size:12px;font-weight:500;padding:6px 14px;border-radius:18px;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);background:rgba(127,119,221,.07);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px;letter-spacing:.01em}
+.hint i{font-size:12px}
+.hint:hover{border-color:rgba(127,119,221,.5);color:#AFA9EC;background:rgba(127,119,221,.15)}
+.hint.active{border-color:rgba(127,119,221,.7);color:#CECBF6;background:rgba(127,119,221,.22);font-weight:600;box-shadow:0 0 0 1px rgba(127,119,221,.2)}
+
+/* Message area */
+#message-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 14px 6px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+.message-area::-webkit-scrollbar{width:2px}
+.message-area::-webkit-scrollbar-thumb{background:rgba(127,119,221,.2);border-radius:2px}
+
+/* Rizz avatar — anchored above scroll */
+.rizz-anchor {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 0 6px;
+  position: relative;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.15, 1);
+  max-width: 400px;
+  margin: 0 auto;
+}
+/* Compact: small inline strip when section is open */
+.rizz-anchor.compact {
+  flex-direction: row;
+  gap: 9px;
+  padding: 7px 10px;
+  background: rgba(255,255,255,.03);
+  border-radius: 8px;
+  border: .5px solid rgba(127,119,221,.12);
+  margin: 6px 10px 2px;
+  cursor: pointer;
+  align-items: center;
+}
+.rizz-anchor.compact:hover { background: rgba(127,119,221,.08); border-color: rgba(127,119,221,.3); }
+.rizz-anchor.compact .rizz-rings { display: none; }
+.rizz-anchor.compact .rizz-lbl,
+.rizz-anchor.compact .rizz-st { display: none; }
+.rizz-anchor.compact .rizz-avatar-svg { width: 36px; height: 42px; }
+.rizz-anchor.compact .rizz-compact-info { display: flex; flex-direction: column; gap: 1px; }
+.rizz-compact-info{display:none}
+.rizz-compact-name{font-size:11px;font-weight:500;color:rgba(127,119,221,.9)}
+.rizz-compact-st{font-size:10px;color:rgba(255,255,255,.28);display:flex;align-items:center;gap:3px}
+
+.rizz-rings{position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none}
+.rizz-lbl{font-size:11px;font-weight:500;color:rgba(127,119,221,.8);margin-top:4px}
+.rizz-st{font-size:10px;color:rgba(255,255,255,.22);display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.sdot{width:5px;height:5px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+
+/* Chat bubbles */
+.bubble{background:#151e30;border:.5px solid rgba(127,119,221,.14);border-radius:11px;border-bottom-left-radius:3px;padding:9px 12px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.76);max-width:100%;margin-bottom:5px}
+.user-row{display:flex;justify-content:flex-end;margin-bottom:6px;animation:fadeUp .2s ease-out}
+.user-bubble{background:#3C3489;border:none;border-radius:11px;border-bottom-right-radius:3px;padding:9px 12px;font-size:12px;line-height:1.6;color:rgba(255,255,255,.92);max-width:85%}
+.message-group{margin-bottom:6px;animation:fadeUp .25s ease-out}
+.message-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:5px}
+.chip{font-size:11px;padding:6px 11px;border-radius:20px;border:.5px solid rgba(127,119,221,.28);color:#AFA9EC;background:rgba(127,119,221,.09);cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:4px}
+.chip:hover{background:rgba(127,119,221,.22);border-color:rgba(127,119,221,.5);color:#CECBF6}
+
+/* Input */
+.input-area{flex-shrink:0;border-top:.5px solid rgba(255,255,255,.06);padding:0 12px}
+.ibar{display:flex;align-items:center;gap:6px;padding:7px 0 10px}
+.cinput{flex:1;background:#151e30;border:.5px solid rgba(255,255,255,.07);border-radius:20px;padding:7px 12px;font-size:12px;color:rgba(255,255,255,.8);outline:none;font-family:inherit}
+.cinput::placeholder{color:rgba(255,255,255,.16)}
+.cinput:focus{border-color:rgba(127,119,221,.4)}
+.ibtn{width:28px;height:28px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px;transition:all .15s}
+.ibtn.mic{background:rgba(255,255,255,.04);color:rgba(255,255,255,.25)}
+.ibtn.voice{background:rgba(255,255,255,.04);color:rgba(255,255,255,.25)}
+.ibtn.voice.active{background:#1D9E75;color:#fff}
+.ibtn.send{background:#3C3489;color:#CECBF6}
+.ibtn.send:hover{background:#534AB7}
+
+/* Section content cards */
+.rctx{background:#111827;border:.5px solid rgba(127,119,221,.18);border-radius:8px;padding:8px 10px;font-size:11px;color:rgba(255,255,255,.5);line-height:1.55;display:flex;gap:7px;animation:slideInLeft .3s ease-out}
+.rctx i{font-size:11px;color:#7F77DD;flex-shrink:0;margin-top:1px}
+.sc{background:#111827;border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;animation:slideInLeft .3s ease-out}
+.sc.hl{border-color:rgba(127,119,221,.2)}
+.sc.gr{border-color:rgba(29,158,117,.18)}
+.sc.ds{border-style:dashed;border-color:rgba(255,255,255,.07)}
+.sc-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.sc-t{font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+.sc-s{font-size:11px;color:rgba(255,255,255,.28);margin-top:2px;line-height:1.4}
+.pill{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.pg{background:rgba(29,158,117,.14);color:#5DCAA5;border:.5px solid rgba(29,158,117,.2)}
+.pp{background:rgba(127,119,221,.14);color:#AFA9EC;border:.5px solid rgba(127,119,221,.2)}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.ab{font-size:10px;padding:4px 10px;border-radius:16px;border:.5px solid rgba(127,119,221,.22);color:#AFA9EC;cursor:pointer;background:none;margin-top:6px;transition:all .15s;display:inline-block}
+.ab:hover{background:rgba(127,119,221,.1)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.sm{background:#111827;border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 10px}
+.sm-l{font-size:10px;color:rgba(255,255,255,.28);margin-bottom:3px}
+.sm-v{font-size:15px;font-weight:500}
+.lrow{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:.5px solid rgba(255,255,255,.05);font-size:11px}
+.lrow:last-child{border:none}
+.ln{color:rgba(255,255,255,.65);font-weight:500}
+.ld{color:rgba(255,255,255,.28)}
+.api-row{display:flex;align-items:center;gap:8px;background:#111827;border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:8px 10px;animation:slideInLeft .3s ease-out}
+.api-ic{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.api-done{background:rgba(29,158,117,.15);color:#5DCAA5}
+.api-pend{background:rgba(127,119,221,.12);color:#AFA9EC}
+.api-opt{background:rgba(255,255,255,.04);color:rgba(255,255,255,.22)}
+.api-info{flex:1}
+.api-t{font-size:11px;font-weight:500;color:rgba(255,255,255,.8)}
+.api-s{font-size:10px;color:rgba(255,255,255,.28);margin-top:1px}
+.api-btn{font-size:10px;padding:3px 9px;border-radius:16px;border:.5px solid rgba(127,119,221,.28);color:#AFA9EC;cursor:pointer;background:none;white-space:nowrap}
+.api-btn:hover{background:rgba(127,119,221,.1)}
+.api-done-lbl{font-size:10px;color:#5DCAA5}
+
+/* Right frame */
+.rp{padding:16px 13px;border-bottom:.5px solid rgba(0,0,0,.07)}
+.rp-head{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.rp-av{width:28px;height:28px;border-radius:50%;background:#ede8ff;border:.5px solid #b8b0f0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#534AB7}
+.rp-name{font-size:12px;font-weight:500;color:#1a1a1a}
+.rp-sub{font-size:10px;color:#aaa}
+.rp-bubble{font-size:11px;color:#333;background:#f5f3ff;border-radius:7px;border-bottom-left-radius:2px;padding:8px 10px;line-height:1.55;margin-bottom:7px}
+.pi{display:flex;align-items:center;gap:6px;padding:4px 0;font-size:11px}
+.pd{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.pd.done{background:#1D9E75}.pd.act{background:#534AB7}.pd.off{background:#e0e0e0}
+.pt-done{color:#bbb;text-decoration:line-through}.pt-act{color:#333;font-weight:500}.pt-off{color:#ccc}
+.stat-pair{display:flex;border-bottom:.5px solid rgba(0,0,0,.07)}
+.stat-cell{flex:1;padding:9px 13px;text-align:center}
+.stat-n{font-size:17px;font-weight:500;color:#1a1a1a}
+.stat-l{font-size:10px;color:#aaa;margin-top:1px}
+.pb{padding:11px 13px;border-bottom:.5px solid rgba(0,0,0,.07)}
+.pb-lbl{font-size:9px;font-weight:500;color:#bbb;text-transform:uppercase;letter-spacing:.07em;margin-bottom:3px}
+.pb-val{font-size:12px;color:#333;margin-bottom:5px}
+.ptags{display:flex;flex-wrap:wrap;gap:3px}
+.ptag{font-size:10px;padding:2px 7px;border-radius:10px;background:#f0eeff;color:#534AB7;border:.5px solid #d4cef8}
+.bbtns{display:flex;border-top:.5px solid rgba(0,0,0,.07)}
+.bbtn{flex:1;padding:9px 0;text-align:center;font-size:11px;color:#888;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;border:none;background:none;border-right:.5px solid rgba(0,0,0,.07)}
+.bbtn:last-child{border-right:none}
+.bbtn:hover{color:#534AB7}
+.ri-bar{padding:9px 13px;border-top:.5px solid rgba(0,0,0,.07);margin-top:auto}
+.ri{width:100%;background:#f5f3ff;border:.5px solid #d4cef8;border-radius:20px;padding:6px 11px;font-size:11px;color:#333;outline:none;font-family:inherit}
+.ri::placeholder{color:#bbb}
+
+/* History pill and drawer */
+.history-pill {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  margin: 0 auto 6px; padding: 4px 12px; border-radius: 14px;
+  border: .5px solid rgba(127,119,221,.2); color: rgba(127,119,221,.5);
+  font-size: 10px; background: rgba(127,119,221,.05); cursor: pointer;
+  transition: all .2s; flex-shrink: 0;
+}
+.history-pill:hover { border-color: rgba(127,119,221,.45); color: #AFA9EC; background: rgba(127,119,221,.12); }
+
+.history-drawer {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #0a1020; border-top: .5px solid rgba(127,119,221,.2);
+  border-radius: 10px 10px 0 0; z-index: 50;
+  transform: translateY(100%); transition: transform .4s cubic-bezier(.4,0,.15,1);
+  display: flex; flex-direction: column; max-height: 80%;
+}
+.history-drawer.open { transform: translateY(0); }
+
+.history-drawer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; border-bottom: .5px solid rgba(255,255,255,.06); flex-shrink: 0;
+}
+.history-drawer-title { font-size: 12px; font-weight: 500; color: rgba(255,255,255,.7); display: flex; align-items: center; gap: 6px; }
+.history-drawer-title i { color: #7F77DD; font-size: 12px; }
+.history-drawer-close { background: none; border: none; color: rgba(255,255,255,.25); cursor: pointer; font-size: 11px; padding: 3px 8px; border-radius: 5px; }
+.history-drawer-close:hover { color: rgba(255,255,255,.6); }
+
+.history-save-btn {
+  font-size: 10px; padding: 3px 9px; border-radius: 12px;
+  border: .5px solid rgba(29,158,117,.3); color: #5DCAA5;
+  background: rgba(29,158,117,.08); cursor: pointer;
+}
+.history-save-btn:hover { background: rgba(29,158,117,.16); }
+
+.history-scroll {
+  flex: 1; overflow-y: auto; padding: 10px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.history-entry { display: flex; flex-direction: column; gap: 2px; padding: 6px 0; border-bottom: .5px solid rgba(255,255,255,.04); }
+.history-entry:last-child { border: none; }
+.history-entry-who { font-size: 9px; font-weight: 500; text-transform: uppercase; letter-spacing: .07em; color: rgba(127,119,221,.4); margin-bottom: 2px; }
+.history-entry-who.you { color: rgba(255,255,255,.2); }
+.history-entry-text { font-size: 11px; color: rgba(255,255,255,.55); line-height: 1.5; }
+.history-section-tag { font-size: 9px; color: rgba(127,119,221,.3); margin-top: 1px; }
+</style>
+</head>
+<body>
+<div class="ipad-frame">
+
+  <header class="ipad-topbar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <svg width="28" height="16" viewBox="0 0 28 16"><path d="M7 8C7 5.8 8.8 4 11 4C13.2 4 14.8 5.5 16 8C17.2 10.5 18.8 12 21 12C23.2 12 25 10.2 25 8C25 5.8 23.2 4 21 4C18.8 4 17.2 5.5 16 8C14.8 10.5 13.2 12 11 12C8.8 12 7 10.2 7 8Z" fill="none" stroke="url(#fg)" stroke-width="2.5"/><defs><linearGradient id="fg" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6c42c2"/><stop offset="100%" stop-color="#2d9e6b"/></linearGradient></defs></svg>
+      <span style="font-size:15px;font-weight:500;background:linear-gradient(to right,#6c42c2,#2d9e6b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Resourceful</span>
+    </div>
+    <button onclick="toggleFrameRight()" style="padding:6px;border-radius:8px;border:none;background:none;cursor:pointer" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">
+      <i id="frameRightIcon" class="ti ti-chevron-right" style="color:#6b7280;font-size:14px"></i>
+    </button>
+  </header>
+
+  <div class="ipad-body">
+    <div class="ipad-center">
+      <div class="app" style="height:100%">
+
+        <!-- WHITE LEFT SIDEBAR -->
+        <div class="sidebar">
+          <div class="sb-logo"><div class="sb-logo-mark">R</div>Resourceful</div>
+          <div class="sb-sec">Your journey</div>
+          <div class="step-item"><div class="step-dot done"><i class="ti ti-check" style="font-size:7px"></i></div><span class="step-text done">Joined Resourceful</span></div>
+          <div class="step-item"><div class="step-dot done"><i class="ti ti-check" style="font-size:7px"></i></div><span class="step-text done">Met Rizz</span></div>
+          <div class="step-item"><div class="step-dot active">3</div><span class="step-text active">Explore the hub</span></div>
+          <div class="step-item"><div class="step-dot">4</div><span class="step-text">Join a call</span></div>
+          <div class="step-item"><div class="step-dot">5</div><span class="step-text">Agree your role</span></div>
+          <div class="step-item"><div class="step-dot">6</div><span class="step-text">Connect your tools</span></div>
+          <div class="sb-divider"></div>
+          <div class="sb-sec">Explore</div>
+          <div class="sb-item" id="sb-watch" onclick="go('watch')"><div class="sb-item-l"><i class="ti ti-player-play"></i>Watch</div><span class="sb-badge dot-green"></span></div>
+          <div class="sb-item" id="sb-calls" onclick="go('calls')"><div class="sb-item-l"><i class="ti ti-calendar"></i>Calls</div><span class="sb-badge">3</span></div>
+          <div class="sb-item" id="sb-bounties" onclick="go('bounties')"><div class="sb-item-l"><i class="ti ti-bolt"></i>Bounties</div><span class="sb-badge">6</span></div>
+          <div class="sb-item" id="sb-network" onclick="go('network')"><div class="sb-item-l"><i class="ti ti-users"></i>Network</div></div>
+          <div class="sb-item" id="sb-membership" onclick="go('membership')"><div class="sb-item-l"><i class="ti ti-id-badge"></i>Membership</div></div>
+          <div class="sb-divider"></div>
+          <div class="sb-sec">You</div>
+          <div class="sb-item" id="sb-knowledge" onclick="go('knowledge')"><div class="sb-item-l purple"><i class="ti ti-brain"></i>My Rizz</div><span class="sb-badge num">Setup</span></div>
+          <div class="sb-item"><div class="sb-item-l"><i class="ti ti-user"></i>Your story</div></div>
+          <div class="sb-item"><div class="sb-item-l"><i class="ti ti-wallet"></i>Your stake</div></div>
+          <div class="sb-divider"></div>
+          <div class="sb-sec">Your network</div>
+          <div class="sb-person"><div class="sb-av" style="background:#0F6E56;color:#9FE1CB">NH</div><div><div class="sb-person-name">Nick Hadfield</div><div class="sb-person-sub">Invited you</div></div></div>
+          <div class="sb-person"><div class="sb-av" style="background:#3C3489;color:#CECBF6">GC</div><div><div class="sb-person-name">Giles Custerson</div><div class="sb-person-sub">Suggested match</div></div></div>
+        </div>
+
+        <!-- DARK CANVAS -->
+        <div class="canvas">
+          <div class="canvas-top">
+            <button class="cpill cpill-back" id="pill-back" onclick="back()" style="display:none"><i class="ti ti-arrow-left" style="font-size:9px"></i> Rizz</button>
+            <button class="cpill live" id="pill-watch" onclick="go('watch')"><i class="ti ti-circle-filled" style="font-size:6px;vertical-align:1px"></i> 2 live</button>
+            <button class="cpill" id="pill-calls" onclick="go('calls')">3 calls</button>
+            <button class="cpill" id="pill-bounties" onclick="go('bounties')">6 bounties</button>
+            <button class="cpill" id="pill-knowledge" onclick="go('knowledge')">My Rizz</button>
+          </div>
+
+          <!-- CANVAS BODY -->
+          <div class="canvas-body">
+
+            <!-- SECTION PANEL -->
+            <div class="section-panel" id="section-panel"></div>
+
+            <!-- RIZZ COLUMN -->
+            <div class="rizz-col">
+
+              <div class="back-to-rizz" id="master-banner" onclick="back()">
+                <div class="back-rizz-inner">
+                  <div class="back-rizz-avatar">
+                    <svg width="22" height="26" viewBox="0 0 180 210">
+                      <defs><linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6c42c2"/><stop offset="100%" stop-color="#2d9e6b"/></linearGradient></defs>
+                      <rect x="20" y="18" width="140" height="100" rx="16" fill="#3d6b1f"/>
+                      <rect x="30" y="28" width="120" height="76" rx="9" fill="#080810"/>
+                      <ellipse cx="68" cy="60" rx="16" ry="19" fill="#97C459"/>
+                      <ellipse cx="68" cy="62" rx="10" ry="13" fill="#0d1800"/>
+                      <path d="M108 50 L124 61 L108 72" fill="none" stroke="#97C459" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M50 80 Q68 96 90 98 Q112 96 130 80" fill="none" stroke="#97C459" stroke-width="3" stroke-linecap="round"/>
+                      <rect x="32" y="133" width="116" height="52" rx="12" fill="#3d6b1f"/>
+                      <rect x="32" y="133" width="116" height="14" rx="12" fill="#534AB7"/>
+                    </svg>
+                  </div>
+                  <div class="back-rizz-text">
+                    <span class="back-rizz-label">← Back to Rizz</span>
+                    <span class="back-rizz-sub">Close section · return to chat</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="hint-row" id="hint-row" style="padding:6px 12px 2px">
+                <button class="hint" onclick="go('watch')"><i class="ti ti-player-play"></i>Watch</button>
+                <button class="hint" onclick="go('calls')"><i class="ti ti-calendar"></i>Calls</button>
+                <button class="hint" onclick="go('bounties')"><i class="ti ti-bolt"></i>Bounties</button>
+                <button class="hint" onclick="go('network')"><i class="ti ti-users"></i>Network</button>
+                <button class="hint" onclick="go('membership')"><i class="ti ti-id-badge"></i>Membership</button>
+                <button class="hint" onclick="go('knowledge')"><i class="ti ti-brain"></i>My Rizz</button>
+              </div>
+
+              <div class="rizz-anchor" id="rizz-center" onclick="if(currentSection)back()" style="cursor:default">
+                <div class="rizz-rings">
+                  <div style="position:absolute;border-radius:50%;border:1px solid rgba(127,119,221,.18);width:130px;height:130px;animation:rp 2.8s ease-in-out infinite;transform:translate(-50%,-50%)"></div>
+                  <div style="position:absolute;border-radius:50%;border:1px solid rgba(127,119,221,.09);width:162px;height:162px;animation:rp 2.8s ease-in-out infinite .45s;transform:translate(-50%,-50%)"></div>
+                  <div style="position:absolute;border-radius:50%;border:1px solid rgba(127,119,221,.05);width:194px;height:194px;animation:rp 2.8s ease-in-out infinite .9s;transform:translate(-50%,-50%)"></div>
+                </div>
+                <div id="avatar-glow" style="animation:gi 3s ease-in-out infinite,bob 2.8s ease-in-out infinite">
+                  <svg class="rizz-avatar-svg" width="120" height="140" viewBox="0 0 180 210">
+                    <defs><linearGradient id="ig" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6c42c2"/><stop offset="100%" stop-color="#2d9e6b"/></linearGradient></defs>
+                    <g style="transform-origin:90px 28px;animation:antb 2s ease-in-out infinite"><line x1="90" y1="28" x2="90" y2="8" stroke="#7F77DD" stroke-width="3.5" stroke-linecap="round"/><circle cx="90" cy="5" r="6" fill="#4a8026" stroke="#97C459" stroke-width="2"/><line x1="83" y1="-1" x2="78" y2="-7" stroke="#97C459" stroke-width="2" stroke-linecap="round"/><line x1="97" y1="-1" x2="102" y2="-7" stroke="#97C459" stroke-width="2" stroke-linecap="round"/></g>
+                    <rect x="20" y="18" width="140" height="100" rx="16" fill="#3d6b1f"/><rect x="24" y="22" width="132" height="92" rx="12" fill="#4e8828"/>
+                    <circle cx="20" cy="68" r="13" fill="#534AB7"/><circle cx="20" cy="68" r="8" fill="#3C3489"/><circle cx="20" cy="68" r="4" fill="#AFA9EC"/>
+                    <circle cx="160" cy="68" r="13" fill="#534AB7"/><circle cx="160" cy="68" r="8" fill="#3C3489"/><circle cx="160" cy="68" r="4" fill="#AFA9EC"/>
+                    <rect x="30" y="28" width="120" height="76" rx="9" fill="#080810"/>
+                    <g style="transform-origin:68px 60px;animation:ebl 4.5s ease-in-out infinite"><ellipse cx="68" cy="60" rx="16" ry="19" fill="#97C459"/><ellipse cx="68" cy="62" rx="10" ry="13" fill="#0d1800"/><ellipse cx="63" cy="55" rx="4" ry="5" fill="#97C459" opacity=".55"/><circle cx="62" cy="54" r="1.5" fill="#d4f08a"/></g>
+                    <path d="M108 50 L124 61 L108 72" fill="none" stroke="#97C459" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="108" y1="50" x2="103" y2="43" stroke="#97C459" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M50 80 Q68 96 90 98 Q112 96 130 80" fill="none" stroke="#97C459" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="47" cy="82" r="5" fill="#97C459" opacity=".16"/><circle cx="133" cy="82" r="5" fill="#97C459" opacity=".16"/>
+                    <rect x="72" y="118" width="36" height="16" rx="4" fill="#26215C"/><rect x="72" y="133" width="36" height="10" rx="4" fill="#3d6b1f"/>
+                    <rect x="32" y="133" width="116" height="52" rx="12" fill="#3d6b1f"/><rect x="38" y="137" width="104" height="44" rx="8" fill="#4e8828"/>
+                    <rect x="32" y="133" width="116" height="14" rx="12" fill="#534AB7"/><rect x="32" y="142" width="116" height="5" fill="#534AB7"/>
+                    <g transform="translate(76,151) scale(1.7)"><path d="M7 8C7 5.8 8.8 4 11 4C13.2 4 14.8 5.5 16 8C17.2 10.5 18.8 12 21 12C23.2 12 25 10.2 25 8C25 5.8 23.2 4 21 4C18.8 4 17.2 5.5 16 8C14.8 10.5 13.2 12 11 12C8.8 12 7 10.2 7 8Z" fill="none" stroke="url(#ig)" stroke-width="2.5"/></g>
+                    <rect x="10" y="138" width="24" height="10" rx="5" fill="#534AB7"/><rect x="4" y="147" width="18" height="26" rx="9" fill="#3d6b1f"/>
+                    <rect x="146" y="136" width="24" height="10" rx="5" fill="#534AB7"/>
+                    <g id="wave-arm" style="transform-origin:161px 120px;animation:wave 1.2s ease-in-out infinite"><rect x="150" y="114" width="22" height="26" rx="10" fill="#3d6b1f" transform="rotate(5,161,120)"/><ellipse cx="164" cy="112" rx="12" ry="9" fill="#d3d1c7"/><rect x="156" y="96" width="5" height="18" rx="2.5" fill="#d3d1c7" transform="rotate(-15,158,104)"/><rect x="162" y="93" width="5" height="20" rx="2.5" fill="#d3d1c7"/><rect x="168" y="95" width="5" height="18" rx="2.5" fill="#d3d1c7" transform="rotate(15,170,104)"/><rect x="172" y="102" width="5" height="14" rx="2.5" fill="#d3d1c7" transform="rotate(30,174,106)"/><rect x="151" y="106" width="7" height="5" rx="2.5" fill="#d3d1c7" transform="rotate(-30,154,108)"/></g>
+                  </svg>
+                </div>
+                <div class="rizz-lbl">Rizz</div>
+                <div class="rizz-st"><span class="sdot"></span>Listening</div>
+                <div class="rizz-compact-info">
+                  <div class="rizz-compact-name">Rizz</div>
+                  <div class="rizz-compact-st"><span class="sdot"></span>Listening</div>
+                </div>
+              </div>
+
+              <div class="message-area" id="message-area">
+
+                <div class="history-pill" id="history-pill" style="display:none" onclick="openHistoryDrawer()">
+                  <i class="ti ti-history"></i>
+                  <span id="history-pill-label">Earlier messages — tap to view</span>
+                </div>
+
+                <div class="message-group" id="welcome-msg" data-msg-id="0">
+                  <div class="bubble">Hey Joseph — Nick told me you're building in the Sacred Valley. What do you want to explore first?</div>
+                  <div class="message-chips">
+                    <button class="chip" onclick="sendChipMessage('What\'s live?')"><i class="ti ti-player-play" style="font-size:10px"></i>What's live?</button>
+                    <button class="chip" onclick="sendChipMessage('Which calls?')"><i class="ti ti-calendar" style="font-size:10px"></i>Which calls?</button>
+                    <button class="chip" onclick="sendChipMessage('Bounties for me')"><i class="ti ti-bolt" style="font-size:10px"></i>Bounties for me</button>
+                    <button class="chip" onclick="sendChipMessage('Who to meet')"><i class="ti ti-users" style="font-size:10px"></i>Who to meet</button>
+                    <button class="chip" onclick="sendChipMessage('Membership')"><i class="ti ti-id-badge" style="font-size:10px"></i>Membership</button>
+                    <button class="chip" onclick="sendChipMessage('My Rizz')"><i class="ti ti-brain" style="font-size:10px"></i>My Rizz</button>
+                  </div>
+                </div>
+
+              </div><!-- /message-area -->
+
+              <div class="history-drawer" id="history-drawer">
+                <div class="history-drawer-header">
+                  <div class="history-drawer-title">
+                    <i class="ti ti-history"></i>Full conversation
+                  </div>
+                  <div style="display:flex;gap:6px;align-items:center">
+                    <button class="history-save-btn" onclick="saveHistory()">
+                      <i class="ti ti-download"></i> Save
+                    </button>
+                    <button class="history-drawer-close" onclick="closeHistoryDrawer()">✕ Close</button>
+                  </div>
+                </div>
+                <div class="history-scroll" id="history-scroll"></div>
+              </div>
+
+              <div class="input-area">
+                <div class="ibar">
+                  <button class="ibtn voice" id="voice-toggle" onclick="toggleVoice()" aria-label="Toggle Voice"><i class="ti ti-speaker"></i></button>
+                  <button class="ibtn mic" aria-label="Voice"><i class="ti ti-microphone"></i></button>
+                  <input class="cinput" id="main-input" placeholder="Reply to Rizz..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+                  <button class="ibtn send" onclick="sendMsg()"><i class="ti ti-arrow-up"></i></button>
+                </div>
+              </div>
+
+            </div><!-- /rizz-col -->
+          </div><!-- /canvas-body -->
+        </div><!-- /canvas -->
+
+        <audio id="audioPlayer" crossorigin="anonymous"></audio>
+
+      </div><!-- /app -->
+          </div><!-- /canvas-body -->
+        </div><!-- /canvas -->
+
+      </div><!-- /app -->
+    </div><!-- /ipad-center -->
+
+    <!-- RIGHT FRAME -->
+    <div class="ipad-right-frame" id="ipadRightFrame">
+      <div class="rp">
+        <div class="rp-head"><div class="rp-av">R</div><div><div class="rp-name">Rizz</div><div class="rp-sub">AI Assistant</div></div></div>
+        <div class="rp-bubble">Welcome, Joseph! I'm Rizz, your AI onboarding guide. Let's get you set up in the Resourceful community.</div>
+        <div class="pi"><div class="pd done"></div><span class="pt-done">Verified by Nick</span></div>
+        <div class="pi"><div class="pd act"></div><span class="pt-act">Introductions</span></div>
+        <div class="pi"><div class="pd off"></div><span class="pt-off">Email & account</span></div>
+        <div class="pi"><div class="pd off"></div><span class="pt-off">Wallet created</span></div>
+      </div>
+      <div class="stat-pair">
+        <div class="stat-cell"><div class="stat-n">1</div><div class="stat-l">Invitation</div></div>
+        <div class="stat-cell"><div class="stat-n">✓</div><div class="stat-l">Verified</div></div>
+      </div>
+      <div class="pb"><div class="pb-lbl">Name</div><div class="pb-val">Joseph</div></div>
+      <div class="pb"><div class="pb-lbl">Building</div><div class="pb-val">Amadena Terra · Sacred Valley</div></div>
+      <div class="pb"><div class="pb-lbl">Interests</div><div class="ptags" style="margin-top:4px"><span class="ptag">Regenerative land</span><span class="ptag">Coordination</span><span class="ptag">Intelligence layers</span></div></div>
+      <div class="bbtns">
+        <button class="bbtn" onclick="go('network')"><i class="ti ti-users" style="font-size:12px"></i>Network</button>
+        <button class="bbtn" onclick="go('knowledge')"><i class="ti ti-trending-up" style="font-size:12px"></i>Progress</button>
+      </div>
+      <div class="ri-bar"><input class="ri" placeholder="Ask me anything..."/></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ── CONFIG ─────────────────────────────────────────────────────────────────
+// The video call room to join — all call "Join" buttons navigate here
+const CALL_ROOM = 'meeting-temp-1';
+const CALL_URL = `/v2/room/${CALL_ROOM}?returnTo=/onboardingv4.html`;
+
+// ── SECTION DEFINITIONS ────────────────────────────────────────────────────
+const SECTIONS = {
+  watch:{icon:'ti-player-play',title:'Watch',pill:'pill-watch',sb:'sb-watch',
+    conjure:"I'm pulling up Watch — ARIA's live right now with 7 people in. There's also a 12-min platform overview built for exactly your context.",
+    scoped:"ARIA briefing is most relevant for Amadena Terra. Platform overview is 12 min — the right starting point before your first call.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>ARIA briefing is live. Platform overview is the right starting point for your context.</div>
+    <div class="sc gr"><div class="sc-row"><div><div class="sc-t">ARIA Arena kickoff</div><div class="sc-s">Nick Hadfield · Live · 7 watching</div></div><span class="pill pg">Live</span></div><button class="ab">Join live</button></div>
+    <div class="sc hl"><div class="sc-row"><div><div class="sc-t">Platform overview</div><div class="sc-s">12 min · 142 views · New</div></div><span class="pill pp">For you</span></div><button class="ab">Watch</button></div>
+    <div class="sc"><div class="sc-t">NFT raise strategy</div><div class="sc-s">22 min · 89 views</div><button class="ab">Watch</button></div>
+    <div class="sc"><div class="sc-t">Bounty system explained</div><div class="sc-s">11 min · 178 views</div><button class="ab">Watch</button></div>
+    <div class="sc ds"><div class="sc-t" style="color:rgba(255,255,255,.38)"><i class="ti ti-video-plus" style="margin-right:4px"></i>Create media with Rizz</div><div class="sc-s" style="margin-top:3px">Talk on video — Rizz transcribes and adds to library</div><button class="ab">Start recording</button></div>`},
+  calls:{icon:'ti-calendar',title:'Calls',pill:'pill-calls',sb:'sb-calls',
+    conjure:"3 calls on the schedule — let me show you. ARIA Governance is today and it's the most relevant for land coordination work.",
+    scoped:"ARIA Governance has land-layer discussion on the agenda today. Your most direct overlap with Amadena Terra.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>ARIA Governance call has land-layer discussion — highly relevant to Amadena Terra.</div>
+    <div class="sc gr"><div class="sc-row"><div><div class="sc-t">ARIA Governance</div><div class="sc-s">Today, 3pm UTC · 12 joining</div></div><span class="pill pg">Today</span></div><button class="ab" onclick="window.location.href='${CALL_URL}'">Join</button></div>
+    <div class="sc hl"><div class="sc-row"><div><div class="sc-t">Sacred Valley cohort</div><div class="sc-s">Thu 15 May · 6 joining</div></div><span class="pill pp">Your region</span></div><button class="ab" onclick="window.location.href='${CALL_URL}'">RSVP</button></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-t">Founders deep-dive</div><div class="sc-s">Fri 16 May · 8 joining</div></div></div><button class="ab" onclick="window.location.href='${CALL_URL}'">RSVP</button></div>
+    <div class="sc ds"><div class="sc-t" style="color:rgba(255,255,255,.38)"><i class="ti ti-phone-plus" style="margin-right:4px"></i>Schedule 1:1 with Rizz</div><div class="sc-s" style="margin-top:3px">Onboarding session — pick a time</div><button class="ab">Schedule</button></div>`},
+  bounties:{icon:'ti-bolt',title:'Bounties',pill:'pill-bounties',sb:'sb-bounties',
+    conjure:"6 bounties open right now. Two are a strong match — coordination mapping and intelligence-layer work, both squarely in your zone.",
+    scoped:"Coordination map closes in 5 days and pays $800. Intelligence layer is $1,200 with 12 days left. Both match your background closely.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>Two bounties match your skills: coordination mapping and intelligence-layer work.</div>
+    <div class="sc gr"><div class="sc-row"><div><div class="sc-t">Coordination map — Sacred Valley</div><div class="sc-s">$800 · Closes in 5 days</div></div><span class="pill pg">Match</span></div><div class="tags"><span class="pill pp">Coordination</span><span class="pill pp">Land</span></div><button class="ab">Apply</button></div>
+    <div class="sc hl"><div class="sc-row"><div><div class="sc-t">Intelligence layer prototype</div><div class="sc-s">$1,200 · Closes in 12 days</div></div><span class="pill pg">Match</span></div><div class="tags"><span class="pill pp">AI</span><span class="pill pp">Mapping</span></div><button class="ab">Apply</button></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-t">Regenerative finance overview</div><div class="sc-s">$500 · Closes in 3 days</div></div></div><button class="ab">View</button></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-t">Community call notes</div><div class="sc-s">$200 · Ongoing</div></div></div><button class="ab">View</button></div>
+    <div class="sc"><div class="sc-row"><div><div class="sc-t">Impact report writing</div><div class="sc-s">$600 · 8 days</div></div></div><button class="ab">View</button></div>`},
+  network:{icon:'ti-users',title:'Network',pill:null,sb:'sb-network',
+    conjure:"Your network — Giles Custerson is the strongest next connection. Land governance from the UK side, direct overlap with Sacred Valley coordination.",
+    scoped:"Giles is your strongest next connection. Same governance layer, different geography — a natural bridge.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>Giles is your strongest next connection — land governance from the UK, strong overlap.</div>
+    <div class="sc gr"><div class="sc-row"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#3C3489;color:#CECBF6;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0">NH</div><div><div class="sc-t">Nick Hadfield</div><div class="sc-s">Invited you</div></div></div><span class="pill pg">Connected</span></div></div>
+    <div class="sc hl"><div class="sc-row"><div style="display:flex;align-items:center;gap:8px"><div style="width:26px;height:26px;border-radius:50%;background:#0F6E56;color:#9FE1CB;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;flex-shrink:0">GC</div><div><div class="sc-t">Giles Custerson</div><div class="sc-s">Land governance · UK · Founding</div></div></div></div><button class="ab" onclick="sendChipMessage('Introduce me to Giles')">Ask Rizz to introduce us</button></div>
+    <div class="sc ds"><div class="sc-t" style="color:rgba(255,255,255,.38)"><i class="ti ti-user-plus" style="margin-right:4px"></i>Complete your story to unlock better matches</div><button class="ab" onclick="sendChipMessage('Tell Rizz about me')">Tell Rizz about me</button></div>`},
+  membership:{icon:'ti-id-badge',title:'Membership',pill:null,sb:'sb-membership',
+    conjure:"You're on founding tier — full access is active. Your stake and role are still pending though. Want to lock those in?",
+    scoped:"Founding access is live. Setting your stake unlocks governance rights and bounty weighting.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>Founding member access is active. Stake setup unlocks governance rights.</div>
+    <div class="g2"><div class="sm"><div class="sm-l">Tier</div><div class="sm-v" style="font-size:13px;color:#AFA9EC">Founding</div></div><div class="sm"><div class="sm-l">Status</div><div class="sm-v" style="font-size:13px;color:#5DCAA5">Active</div></div></div>
+    <div class="sc"><div class="sc-t" style="margin-bottom:6px">Onboarding progress</div>
+    <div class="lrow"><span class="ln">Profile verified</span><span class="ld" style="color:#5DCAA5">✓</span></div>
+    <div class="lrow"><span class="ln">Story shared</span><span class="ld">Pending</span></div>
+    <div class="lrow"><span class="ln">Stake set</span><span class="ld">Pending</span></div>
+    <div class="lrow"><span class="ln">First call joined</span><span class="ld" id="step-call-status">Pending</span></div>
+    <div class="lrow"><span class="ln">Tools connected</span><span class="ld">Pending</span></div></div>
+    <div class="sc ds"><div class="sc-t" style="color:rgba(255,255,255,.38)">Stake & governance rights</div><div class="sc-s" style="margin-top:3px">Set your stake to unlock voting, bounty weighting and governance</div><button class="ab">Set stake</button></div>`},
+  knowledge:{icon:'ti-brain',title:'My Rizz',pill:'pill-knowledge',sb:'sb-knowledge',
+    conjure:"Here's your Rizz setup. The more you tell me, the smarter the matching gets. Story and skills are the key gaps right now.",
+    scoped:"Your story and skills are the biggest gaps. Filling those unlocks better bounties, introductions, and matching.",
+    html:`<div class="rctx"><i class="ti ti-sparkles"></i>Complete your Rizz profile for smarter matching, personalised bounties and better introductions.</div>
+    <div class="api-row"><div class="api-ic api-done"><i class="ti ti-check"></i></div><div class="api-info"><div class="api-t">Name & location</div><div class="api-s">Joseph · Sacred Valley</div></div><span class="api-done-lbl">Done</span></div>
+    <div class="api-row"><div class="api-ic api-pend"><i class="ti ti-file-text"></i></div><div class="api-info"><div class="api-t">Your story</div><div class="api-s">What you're building and why</div></div><button class="api-btn" onclick="sendChipMessage('Help me write my story')">Add</button></div>
+    <div class="api-row"><div class="api-ic api-pend"><i class="ti ti-tool"></i></div><div class="api-info"><div class="api-t">Skills & tools</div><div class="api-s">What you bring to the community</div></div><button class="api-btn" onclick="sendChipMessage('Help me list my skills')">Add</button></div>
+    <div class="api-row"><div class="api-ic api-opt"><i class="ti ti-wallet"></i></div><div class="api-info"><div class="api-t">Wallet</div><div class="api-s">Connect for bounties & stake</div></div><button class="api-btn">Connect</button></div>
+    <div class="api-row"><div class="api-ic api-opt"><i class="ti ti-brand-slack"></i></div><div class="api-info"><div class="api-t">Slack</div><div class="api-s">Sync your workspace</div></div><button class="api-btn">Connect</button></div>
+    <div class="api-row"><div class="api-ic api-opt"><i class="ti ti-calendar"></i></div><div class="api-info"><div class="api-t">Calendar</div><div class="api-s">Auto-RSVP relevant calls</div></div><button class="api-btn">Connect</button></div>`}
+};
+
+let currentSection=null, rightFrameOpen=true;
+const masterHistory=[];
+
+// Voice settings
+let voiceEnabled = localStorage.getItem('rizzVoice') !== 'false'; // default true
+
+const MSG_VISIBLE = 3;   // how many messages to show at once in the stream
+let msgCounter = 1;      // welcome msg is 0; new msgs get incrementing ids
+let fullHistory = [];    // [{id, role, text, section, ts}] — full record, never trimmed
+
+// ── Check for returnTo param — mark call as completed if returning from call
+(function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('callComplete') === '1') {
+    // Mark "Join a call" step as done
+    const steps = document.querySelectorAll('.step-item');
+    if (steps[3]) {
+      const dot = steps[3].querySelector('.step-dot');
+      const text = steps[3].querySelector('.step-text');
+      if (dot) { dot.classList.remove('active'); dot.classList.add('done'); dot.innerHTML = '<i class="ti ti-check" style="font-size:7px"></i>'; }
+      if (text) { text.classList.remove('active'); text.classList.add('done'); }
+    }
+    // Update membership call status
+    const callStatus = document.getElementById('step-call-status');
+    if (callStatus) { callStatus.textContent = '✓ Completed'; callStatus.style.color = '#5DCAA5'; }
+    // Clean the URL
+    window.history.replaceState({}, '', '/onboardingv4.html');
+  }
+})();
+
+// ── Conjure-causality ──────────────────────────────────────────────────────
+async function go(section) {
+  const d=SECTIONS[section]; if(!d) return;
+  if(currentSection===section){back();return;}
+
+  // 1. ANTICIPATION — Rizz glows and arm waves fast
+  const rc=document.getElementById('rizz-center');
+  const arm=document.getElementById('wave-arm');
+  const glow=document.getElementById('avatar-glow');
+  arm.style.animation='wave-fast .35s ease-in-out 4';
+  glow.style.animation='gi-conjure 1.1s ease-out,bob-conjure .9s ease-out';
+
+  // Mark active nav
+  document.querySelectorAll('.cpill').forEach(e=>e.classList.remove('active-pill'));
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active-link','earned'));
+  document.querySelectorAll('.hint').forEach(e=>e.classList.remove('active'));
+  if(d.pill) document.getElementById(d.pill)?.classList.add('active-pill');
+  if(d.sb) document.getElementById(d.sb)?.classList.add('active-link');
+  document.querySelectorAll('.hint').forEach(e=>{
+    const t=e.textContent.trim().toLowerCase();
+    if(t.includes(section)||(section==='knowledge'&&t.includes('rizz'))) e.classList.add('active');
+  });
+
+  // 2. Rizz speaks section into existence
+  await sleep(220);
+  addMasterMsg(d.conjure,'rizz');
+  masterHistory.push({role:'assistant',content:d.conjure});
+
+  // 3. Panel opens
+  await sleep(320);
+  const panel=document.getElementById('section-panel');
+  panel.innerHTML=`
+    <div class="sp-nav">
+      <div class="sp-title"><i class="ti ${d.icon}"></i>${d.title}</div>
+      <button class="sp-back" onclick="back()"><i class="ti ti-arrow-left" style="font-size:10px"></i>Back</button>
+    </div>
+    <div class="sp-scroll">${d.html}</div>
+    <div class="section-log" id="log-${section}"></div>`;
+  panel.classList.add('open');
+  currentSection=section;
+
+  // 4. Rizz calms, compacts
+  arm.style.animation='wave 1.2s ease-in-out infinite';
+  glow.style.animation='gi 3s ease-in-out infinite,bob 2.8s ease-in-out infinite';
+  rc.classList.add('compact');
+  document.getElementById('master-banner').classList.add('show');
+  document.getElementById('pill-back').style.display='inline-flex';
+  document.getElementById('hint-row').style.opacity='1';
+  document.getElementById('hint-row').style.pointerEvents='';
+
+  // 5. Scoped Rizz comment
+  await sleep(550);
+  addSectionMsg(section, d.scoped);
+}
+
+function back() {
+  const panel=document.getElementById('section-panel');
+  panel.classList.remove('open');
+  setTimeout(()=>{if(!panel.classList.contains('open'))panel.innerHTML='';},420);
+  document.getElementById('rizz-center').classList.remove('compact');
+  document.getElementById('master-banner').classList.remove('show');
+  document.getElementById('pill-back').style.display='none';
+  document.getElementById('hint-row').style.opacity='';
+  document.getElementById('hint-row').style.pointerEvents='';
+  document.querySelectorAll('.cpill').forEach(e=>e.classList.remove('active-pill'));
+  document.querySelectorAll('.sb-item').forEach(e=>e.classList.remove('active-link','earned'));
+  document.querySelectorAll('.hint').forEach(e=>e.classList.remove('active'));
+  currentSection=null;
+}
+
+function earnedHighlight(key) {
+  const d=SECTIONS[key]; if(!d||key===currentSection) return;
+  const el=document.getElementById(d.sb);
+  if(el){el.classList.add('earned');setTimeout(()=>el.classList.remove('earned'),4000);}
+}
+
+// ── Chat ───────────────────────────────────────────────────────────────────
+function addMasterMsg(text, type, suggestions = []) {
+  const stream = document.getElementById('message-area');
+  const g = document.createElement('div');
+  const id = msgCounter++;
+
+  if (type === 'user') {
+    g.className = 'user-row';
+    g.dataset.msgId = id;
+    const b = document.createElement('div');
+    b.className = 'user-bubble';
+    b.textContent = text;
+    g.appendChild(b);
+  } else {
+    g.className = 'message-group';
+    g.dataset.msgId = id;
+    const b = document.createElement('div');
+    b.className = 'bubble';
+    b.textContent = text;
+    g.appendChild(b);
+    if (suggestions.length) {
+      const chips = document.createElement('div');
+      chips.className = 'message-chips';
+      suggestions.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.textContent = typeof s === 'string' ? s : s.text;
+        btn.onclick = () => sendChipMessage(btn.textContent);
+        chips.appendChild(btn);
+      });
+      g.appendChild(chips);
+    }
+  }
+
+  // Archive to full history
+  fullHistory.push({ id, role: type === 'user' ? 'you' : 'rizz', text, section: currentSection, ts: new Date() });
+
+  // Hide older messages beyond MSG_VISIBLE, keeping welcome message always visible
+  const newMsgs = stream.querySelectorAll('[data-msg-id]:not([data-msg-id="0"])');
+  const totalVisible = newMsgs.length >= MSG_VISIBLE ? MSG_VISIBLE : newMsgs.length;
+  const toHideCount = newMsgs.length - totalVisible;
+  if (toHideCount > 0) {
+    newMsgs.forEach((el, i) => {
+      if (i < toHideCount) el.style.display = 'none';
+    });
+    const pill = document.getElementById('history-pill');
+    if (pill) {
+      pill.style.display = 'flex';
+      const hidden = stream.querySelectorAll('[data-msg-id][style*="display: none"]').length;
+      const label = document.getElementById('history-pill-label');
+      if (label) label.textContent = `${hidden} earlier message${hidden !== 1 ? 's' : ''} — tap to view`;
+    }
+  }
+
+  stream.appendChild(g);
+  stream.scrollTop = stream.scrollHeight;
+
+  // Speak Rizz responses if voice enabled
+  if (type === 'rizz') speakText(text);
+
+  return g;
+}
+
+function addSectionMsg(section, text) {
+  const log = document.getElementById(`log-${section}`);
+  if (!log) return;
+  // Show only a short note in the section log, not the full reply
+  const short = text.length > 80 ? text.slice(0, 77).trimEnd() + '…' : text;
+  const el = document.createElement('div');
+  el.className = 'sc-log-entry';
+  el.innerHTML = `<i class="ti ti-sparkles"></i><span>${short}</span>`;
+  log.appendChild(el);
+  log.scrollTop = log.scrollHeight;
+}
+
+function openHistoryDrawer() {
+  const drawer = document.getElementById('history-drawer');
+  const scroll = document.getElementById('history-scroll');
+  if (!drawer || !scroll) return;
+  scroll.innerHTML = '';
+  fullHistory.forEach(entry => {
+    const el = document.createElement('div');
+    el.className = 'history-entry';
+    const who = document.createElement('div');
+    who.className = 'history-entry-who' + (entry.role === 'you' ? ' you' : '');
+    who.textContent = entry.role === 'you' ? 'You' : 'Rizz';
+    const txt = document.createElement('div');
+    txt.className = 'history-entry-text';
+    txt.textContent = entry.text;
+    el.appendChild(who);
+    el.appendChild(txt);
+    if (entry.section && SECTIONS[entry.section]) {
+      const tag = document.createElement('div');
+      tag.className = 'history-section-tag';
+      tag.textContent = `in ${SECTIONS[entry.section].title}`;
+      el.appendChild(tag);
+    }
+    scroll.appendChild(el);
+  });
+  drawer.classList.add('open');
+  scroll.scrollTop = scroll.scrollHeight;
+}
+
+function closeHistoryDrawer() {
+  document.getElementById('history-drawer')?.classList.remove('open');
+}
+
+function saveHistory() {
+  try {
+    const lines = fullHistory.map(e => {
+      const time = e.ts.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const sec = e.section && SECTIONS[e.section] ? ` [${SECTIONS[e.section].title}]` : '';
+      return `[${time}]${sec} ${e.role === 'you' ? 'You' : 'Rizz'}: ${e.text}`;
+    });
+    const blob = new Blob([lines.join('\n\n')], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'rizz-conversation.txt';
+    a.click();
+  } catch (error) {
+    console.error('Failed to save history:', error);
+    alert('Unable to save conversation. Please try again.');
+  }
+}
+
+function showTyping() {
+  const area=document.getElementById('message-area');
+  const el=document.createElement('div');el.className='message-group';el.id='typing-ind';
+  el.innerHTML='<div class="bubble" style="color:rgba(255,255,255,.28);font-style:italic">Rizz is thinking…</div>';
+  area.appendChild(el);area.scrollTop=area.scrollHeight;
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('main-input');
+  const text=inp.value.trim();if(!text)return;inp.value='';
+  await processMessage(text);
+}
+async function sendChipMessage(text){await processMessage(text);}
+
+async function processMessage(text) {
+  addMasterMsg(text,'user');
+  masterHistory.push({role:'user',content:text});
+  showTyping();
+  try {
+    const r=await fetch('/api/chat?invite_id=joseph-onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      message:text,
+      history:masterHistory.slice(-12),
+      section: currentSection || 'general',
+      queryText: text // Pass current message for semantic search
+    })});
+    const data=await r.json();
+    document.getElementById('typing-ind')?.remove();
+    let txt=data.content||data.message||"I'm here — what's on your mind?";
+    let sugs=data.suggestions||[];
+    // Parse suggestions from Rizz response if not already provided
+    if(typeof txt==='string'&&txt.startsWith('{')){try{const p=JSON.parse(txt);txt=p.content||txt;sugs=p.suggestions||sugs;}catch{}}
+    addMasterMsg(txt,'rizz',sugs);
+    masterHistory.push({role:'assistant',content:txt});
+    if(currentSection) addSectionMsg(currentSection, txt);
+    Object.keys(SECTIONS).forEach(k=>{if(txt.toLowerCase().includes(SECTIONS[k].title.toLowerCase())&&k!==currentSection)earnedHighlight(k);});
+  } catch(e) {
+    console.error('Chat error:', e);
+    document.getElementById('typing-ind')?.remove();
+    const fb=["I'm with you — keep going.","Got it. Want to explore a section?","Interesting — tell me more."];
+    const reply=fb[Math.floor(Math.random()*fb.length)];
+    addMasterMsg(reply,'rizz');
+    masterHistory.push({role:'assistant',content:reply});
+    if(currentSection) addSectionMsg(currentSection,reply);
+  }
+}
+
+function toggleFrameRight(){
+  const fr=document.getElementById('ipadRightFrame'),ic=document.getElementById('frameRightIcon');
+  rightFrameOpen=!rightFrameOpen;fr.classList.toggle('collapsed',!rightFrameOpen);
+  ic.className=rightFrameOpen?'ti ti-chevron-right':'ti ti-chevron-left';
+}
+
+// Voice functions
+function toggleVoice() {
+  voiceEnabled = !voiceEnabled;
+  localStorage.setItem('rizzVoice', voiceEnabled);
+  updateVoiceButton();
+}
+
+function updateVoiceButton() {
+  const btn = document.getElementById('voice-toggle');
+  if (voiceEnabled) {
+    btn.classList.add('active');
+    btn.querySelector('i').className = 'ti ti-speaker';
+  } else {
+    btn.classList.remove('active');
+    btn.querySelector('i').className = 'ti ti-speaker-off';
+  }
+}
+
+function speakText(text) {
+  if (!voiceEnabled) return;
+
+  // Try TTS API first, fallback to Web Speech API
+  fetch('/api/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text })
+  })
+  .then(response => {
+    if (response.ok) {
+      return response.blob();
+    } else {
+      throw new Error('TTS API failed');
+    }
+  })
+  .then(blob => {
+    const audioUrl = URL.createObjectURL(blob);
+    const audio = document.getElementById('audioPlayer');
+    audio.src = audioUrl;
+    audio.play();
+  })
+  .catch(error => {
+    console.warn('TTS API failed, using Web Speech API:', error);
+    // Fallback to Web Speech API
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.rate = 0.93; utt.pitch = 1.05;
+      const voices = speechSynthesis.getVoices();
+      const pick = voices.find(v => /Samantha|Karen|Daniel|EN-GB|EN-US/.test(v.name));
+      if (pick) utt.voice = pick;
+      speechSynthesis.speak(utt);
+    }
+  });
+}
+
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// Init
+updateVoiceButton();
+</script>
+</body>
+</html>
