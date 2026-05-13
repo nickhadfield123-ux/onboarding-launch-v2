@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Meeting } from "@/lib/meetings/types"
 import { useCall, useRizz } from "@/lib/cockpit/context"
+import { getHubUrl } from "@/lib/utils"
 import { 
   Video, 
   Users,
@@ -47,7 +48,6 @@ interface PreCallPageProps {
   onInviteUsers: (userIds: string[]) => void
   onCopyLink: () => void
   isLinkCopied: boolean
-  onCancel?: () => void
 }
 
 export function PreCallPage({ 
@@ -56,8 +56,7 @@ export function PreCallPage({
   onJoinCall, 
   onInviteUsers, 
   onCopyLink, 
-  isLinkCopied,
-  onCancel 
+  isLinkCopied 
 }: PreCallPageProps) {
   // Verify component is rendering on client side
   console.log('🎨 PreCallPage rendering with:', { meeting, roomUrl })
@@ -173,17 +172,15 @@ export function PreCallPage({
             </svg>
             Join Call
           </button>
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={() => {
               console.log('🎯 Cancel button clicked!')
-              if (onCancel) {
-                onCancel()
-              } else {
-                window.location.href = `/cockpit/hub/post-call/${meeting.id}?exit=cancelled&duration=0`
-              }
+              // Navigate to user's hub
+              const hubUrl = getHubUrl()
+              window.location.href = hubUrl
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-slate-700 text-white hover:bg-slate-600"
           >
             <ChevronRight className="h-4 w-4" />
             Cancel
@@ -218,7 +215,7 @@ export function PreCallPage({
                     onCopyLink()
                     console.log('✅ onCopyLink called successfully')
                   }}
-                  className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
                 >
                   <Copy className="h-4 w-4" />
                   {isLinkCopied ? 'Copied!' : 'Copy'}
@@ -327,7 +324,7 @@ export function PreCallPage({
                     setShowInviteModal(true)
                     console.log('✅ Invite modal opened')
                   }}
-                  className="flex items-center gap-2 flex-1"
+                  className="flex items-center gap-2 flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
                 >
                   <UserPlus className="h-4 w-4" />
                   Invite More

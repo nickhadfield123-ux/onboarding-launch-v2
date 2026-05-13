@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client"
 
 import * as React from "react"
@@ -9,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Meeting } from "@/lib/meetings/types"
 import { useCall, useRizz } from "@/lib/cockpit/context"
+import { getHubUrl } from "@/lib/utils"
 import { 
   Video, 
   Users,
@@ -115,13 +115,21 @@ export function PostCallPage({
           <p className="text-gray-300">Session Summary & Next Steps</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="secondary" 
+          <Button
+            variant="secondary"
             onClick={onBackToHub}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-slate-700 text-white hover:bg-slate-600"
           >
             <Home className="h-4 w-4" />
             Back to Hub
+          </Button>
+          <Button
+            variant="outline"
+            onClick={onBackToHub}
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+          >
+            <Home className="h-4 w-4" />
+            Return to Hub
           </Button>
         </div>
       </div>
