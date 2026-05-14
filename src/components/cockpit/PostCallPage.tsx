@@ -100,25 +100,23 @@ export function PostCallPage({
   }
 
   return (
-    <div className="relative space-y-6 text-white">
-      {/* Top-left Return to Hub button */}
-      <div className="absolute top-2 left-2 z-10">
-        <Button
-          variant="outline"
-          onClick={() => {
-            const hubUrl = getHubUrl()
-            window.location.href = hubUrl
-          }}
-          className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-        >
-          <Home className="h-4 w-4" />
-          Return to Hub
-        </Button>
-      </div>
-
+    <div className="space-y-6 text-white">
       {/* Meeting Header */}
       <div className="flex items-center justify-between">
-        <div className="space-y-2">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              const hubUrl = getHubUrl()
+              window.location.href = hubUrl
+            }}
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+          >
+            <Home className="h-4 w-4" />
+            Return to Hub
+          </Button>
+        </div>
+        <div className="flex-1 space-y-2 mx-6">
           <div className="flex items-center gap-3">
             {getStatusBadge()}
             <Badge variant="outline" className="flex items-center gap-1">
