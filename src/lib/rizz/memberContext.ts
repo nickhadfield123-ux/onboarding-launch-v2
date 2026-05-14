@@ -31,19 +31,21 @@ export interface MemberContextData {
 export async function getMemberContext(
   userId: string
 ): Promise<MemberContextData | null> {
-  const { data: user } = await getSupabaseClient()
+  const userResult = await getSupabaseClient()
     .from('users')
     .select('name')
     .eq('id', userId)
-    .maybeSingle() as { name: string } | null
+    .maybeSingle()
+  const user = userResult.data as { name: string } | null
 
   if (!user) return null
 
-  const { data: ctx } = await getSupabaseClient()
+  const ctxResult = await getSupabaseClient()
     .from('member_context')
     .select('*')
     .eq('user_id', userId)
-    .single() as MemberContextRow | null
+    .single()
+  const ctx = ctxResult.data as MemberContextRow | null
 
   return {
     userName: user.name,
@@ -91,11 +93,12 @@ BEHAVIOUR:
 export async function getMemberContextByEmail(
   email: string
 ): Promise<MemberContextData | null> {
-  const { data: user } = await getSupabaseClient()
+  const userResult = await getSupabaseClient()
     .from('users')
     .select('id, name')
     .eq('email', email)
-    .maybeSingle() as { id: string; name: string } | null
+    .maybeSingle()
+  const user = userResult.data as { id: string; name: string } | null
 
   if (!user) return null
   return getMemberContext(user.id)
