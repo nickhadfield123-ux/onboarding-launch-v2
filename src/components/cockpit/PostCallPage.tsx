@@ -102,7 +102,7 @@ export function PostCallPage({
   return (
     <div className="relative space-y-6 text-white">
       {/* Top-left Return to Hub button */}
-      <div className="absolute top-4 left-4 z-10">
+      <div className="absolute top-2 left-2 z-10">
         <Button
           variant="outline"
           onClick={() => {

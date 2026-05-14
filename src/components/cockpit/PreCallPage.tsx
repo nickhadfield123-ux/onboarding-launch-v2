@@ -9,8 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Meeting } from "@/lib/meetings/types"
 import { useCall, useRizz } from "@/lib/cockpit/context"
 import { getHubUrl } from "@/lib/utils"
-import { 
-  Video, 
+import {
+  Video,
   Users,
   Calendar,
   Clock,
@@ -29,7 +29,12 @@ import {
   Mic,
   MicOff,
   Video as VideoIcon,
-  VideoOff
+  VideoOff,
+  CheckCircle,
+  XCircle,
+  Save,
+  RotateCcw,
+  Home
 } from "lucide-react"
 
 // Mock user profiles
@@ -121,7 +126,22 @@ export function PreCallPage({
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="relative space-y-6 text-white">
+      {/* Top-left Return to Hub button */}
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          onClick={() => {
+            const hubUrl = getHubUrl()
+            window.location.href = hubUrl
+          }}
+          className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+        >
+          <Home className="h-4 w-4" />
+          Return to Hub
+        </Button>
+      </div>
+
       {/* Meeting Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
