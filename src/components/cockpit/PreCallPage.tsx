@@ -145,8 +145,8 @@ export function PreCallPage({
           )}
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             onClick={() => {
               console.log('🎯 Invite People button clicked!')
               console.log('📋 onInviteUsers function:', onInviteUsers)
@@ -154,7 +154,7 @@ export function PreCallPage({
               setShowInviteModal(true)
               console.log('✅ Invite modal opened')
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
           >
             <UserPlus className="h-4 w-4" />
             Invite People
@@ -498,7 +498,7 @@ export function PreCallPage({
                 ))}
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setShowInviteModal(false)}>
+                <Button variant="outline" className="flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700" onClick={() => setShowInviteModal(false)}>
                   Cancel
                 </Button>
                 <Button 
