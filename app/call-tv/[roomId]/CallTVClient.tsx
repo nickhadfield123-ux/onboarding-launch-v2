@@ -97,7 +97,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
     } else {
       if (durationRef.current) {
         clearInterval(durationRef.current)
-        durationRef.current = undefined
+        durationRef.current = null
       }
       setDuration(0)
     }
