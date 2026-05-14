@@ -35,12 +35,16 @@ export default function RoomV2Page() {
     title: "Welcome to Resourceful",
     description: "This is your video call room",
     meeting_type: "team-sync",
-    start_time: new Date().toISOString(),
-    end_time: new Date(Date.now() + 3600000).toISOString(),
+    start_time: new Date(),
+    end_time: new Date(Date.now() + 3600000),
+    timezone: "UTC",
+    all_day: false,
     status: "scheduled",
     created_by: "1",
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
+    recording_enabled: true,
+    visibility: "private",
+    created_at: new Date(),
+    updated_at: new Date()
   }
 
   const handleJoinCall = () => {
