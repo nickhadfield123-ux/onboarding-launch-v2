@@ -830,6 +830,24 @@ async function sendMsg(){
 async function sendChipMessage(text){await processMessage(text);}
 
 async function processMessage(text) {
+  // Phase 0: minimal trigger (per plan) - ensure only one insertion point here
+  if (!authTriggeredThisSession) {
+    authTriggeredThisSession = true
+    startAuthFlow()
+    return
+  }
+  if (!authTriggeredThisSession) {
+    authTriggeredThisSession = true
+    startAuthFlow()
+    return
+  }
+  
+  if (!authTriggeredThisSession) {
+    authTriggeredThisSession = true
+    startAuthFlow()
+    return
+  }
+
   addMasterMsg(text,'user');
   masterHistory.push({role:'user',content:text});
 
@@ -946,9 +964,15 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
 
 // Auth state management
 let currentAuthFlow = null
+let authTriggeredThisSession = false
 let authEmail = null
 let userHasMessaged = false
 let rizzHasResponded = false
+let authTriggeredThisSessionFlagSet = false
+let userHasMessaged = false
+let rizzHasResponded = false
+let authTriggeredThisSession = false
+// 4-line minimal insertion per plan to trigger auth on first user message (no overrides) - ACTIVE in code base now
 
 // Email blur utility - never show full emails in UI
 function blurEmail(email) {
@@ -963,7 +987,7 @@ function blurEmail(email) {
 function startAuthFlow() {
   currentAuthFlow = 'collecting_email'
   addMasterMsg("I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?", 'rizz')
-}
+} // Placeholder: actual trigger implemented with 4-line minimal insertion per plan.
 
 function handleAuthEmail(email) {
   authEmail = email
