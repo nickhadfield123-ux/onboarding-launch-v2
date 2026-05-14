@@ -100,7 +100,22 @@ export function PostCallPage({
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="relative space-y-6 text-white">
+      {/* Top-left Return to Hub button */}
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          onClick={() => {
+            const hubUrl = getHubUrl()
+            window.location.href = hubUrl
+          }}
+          className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+        >
+          <Home className="h-4 w-4" />
+          Return to Hub
+        </Button>
+      </div>
+
       {/* Meeting Header */}
       <div className="flex items-center justify-between">
         <div className="space-y-2">
@@ -122,14 +137,6 @@ export function PostCallPage({
           >
             <Home className="h-4 w-4" />
             Back to Hub
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onBackToHub}
-            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-          >
-            <Home className="h-4 w-4" />
-            Return to Hub
           </Button>
         </div>
       </div>
