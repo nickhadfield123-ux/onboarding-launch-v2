@@ -67,7 +67,7 @@ export function PostCallPage({
 
   // Set Rizz mode to post-call when component mounts
   React.useEffect(() => {
-    rizzDispatch({ type: 'SET_MODE', payload: 'post-call' })
+    rizzDispatch({ type: 'SET_MODE', payload: 'summary' })
   }, [rizzDispatch])
 
   const formatDuration = (seconds: number) => {
