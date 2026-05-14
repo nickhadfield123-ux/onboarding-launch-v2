@@ -832,6 +832,19 @@ async function sendChipMessage(text){await processMessage(text);}
 async function processMessage(text) {
   addMasterMsg(text,'user');
   masterHistory.push({role:'user',content:text});
+
+  // Check if auth should be triggered instead of normal response
+  if (userHasMessaged && !rizzHasResponded && !currentAuthFlow && !sessionStorage.getItem('pending_auth')) {
+    // This is the first user message - trigger auth instead of normal Rizz response
+    showTyping();
+    setTimeout(() => {
+      document.getElementById('typing-ind')?.remove();
+      startAuthFlow();
+    }, 1500); // Give time for typing indicator
+    return;
+  }
+
+  // Normal Rizz response flow
   showTyping();
   try {
     const r=await fetch('/api/chat?invite_id=joseph-onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
@@ -949,7 +962,7 @@ function blurEmail(email) {
 // Auth conversation handlers
 function startAuthFlow() {
   currentAuthFlow = 'collecting_email'
-  addMasterMsg("One last thing — I need a quick email confirmation to secure your account. What address should I use?", 'rizz')
+  addMasterMsg("I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?", 'rizz')
 }
 
 function handleAuthEmail(email) {
@@ -1040,15 +1053,7 @@ async function checkAuthState() {
   // Note: Auth flow will be triggered by conversation, not automatically
 }
 
-// Check if auth should be triggered based on conversation flow
-function checkAuthTrigger() {
-  if (userHasMessaged && rizzHasResponded && !currentAuthFlow && !sessionStorage.getItem('pending_auth')) {
-    // User has interacted with Rizz, now trigger auth
-    setTimeout(() => {
-      startAuthFlow()
-    }, 1000) // Small delay to feel natural
-  }
-}
+// Auth trigger is now handled directly in processMessage for first user interaction
 
 // Modified sendMsg to handle auth flows and track conversation
 const originalSendMsg = sendMsg
@@ -1094,11 +1099,6 @@ window.addMasterMsg = function(text, type, suggestions) {
   // Track that Rizz has responded
   if (type === 'rizz') {
     rizzHasResponded = true
-
-    // Check if auth should be triggered after Rizz responds
-    setTimeout(() => {
-      checkAuthTrigger()
-    }, 500)
   }
 
   // Call original addMasterMsg
