@@ -1,10 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+// Lazy Supabase client creation to avoid build-time evaluation
+let supabase: ReturnType<typeof createClient> | null = null
+
+function getSupabaseClient(): ReturnType<typeof createClient> {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables — check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY')
+    }
+
+    supabase = createClient(supabaseUrl, supabaseKey)
+  }
+  return supabase!
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -23,11 +35,11 @@ export async function POST(request: NextRequest) {
     let inviteEmail: string | null = null
 
     // Try platform_invites first (primary table) - look up by token
-    const { data: platformInvite } = await supabase
+    const { data: platformInvite } = await getSupabaseClient()
       .from('platform_invites')
       .select('email')
       .eq('token', inviteToken)
-      .single()
+      .maybeSingle() as { data: { email: string } | null }
 
     if (platformInvite) {
       inviteEmail = platformInvite.email
@@ -51,13 +63,13 @@ export async function POST(request: NextRequest) {
     // Look up user by email
     if (inviteEmail) {
       console.log('Looking up user with email:', inviteEmail)
-      const { data: user, error: userError } = await supabase
+      const { data: user } = await getSupabaseClient()
         .from('users')
         .select('id')
         .eq('email', inviteEmail)
-        .single()
+        .maybeSingle() as { data: { id: string } | null }
 
-      console.log('User lookup result:', { user, error: userError })
+      console.log('User lookup result:', { user })
 
       if (user) {
         userId = user.id
@@ -66,11 +78,11 @@ export async function POST(request: NextRequest) {
         console.log('User not found, trying alternative lookup...')
 
         // Try looking up by name instead
-        const { data: userByName } = await supabase
+        const { data: userByName } = await getSupabaseClient()
           .from('users')
           .select('id')
           .eq('name', 'Joseph Brand')
-          .single()
+          .maybeSingle() as { data: { id: string } | null }
 
         if (userByName) {
           userId = userByName.id

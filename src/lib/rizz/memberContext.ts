@@ -1,9 +1,21 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_KEY!
-)
+// Lazy Supabase client creation to avoid build-time evaluation
+let supabase: ReturnType<typeof createClient> | null = null
+
+function getSupabaseClient(): ReturnType<typeof createClient> {
+  if (!supabase) {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      throw new Error('Missing Supabase environment variables — check NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_KEY')
+    }
+
+    supabase = createClient(supabaseUrl, supabaseKey)
+  }
+  return supabase!
+}
 
 export interface MemberContextData {
   userName: string
@@ -17,7 +29,7 @@ export interface MemberContextData {
 export async function getMemberContext(
   userId: string
 ): Promise<MemberContextData | null> {
-  const { data: user } = await supabase
+  const { data: user } = await getSupabaseClient()
     .from('users')
     .select('name')
     .eq('id', userId)
@@ -25,7 +37,7 @@ export async function getMemberContext(
 
   if (!user) return null
 
-  const { data: ctx } = await supabase
+  const { data: ctx } = await getSupabaseClient()
     .from('member_context')
     .select('*')
     .eq('user_id', userId)
@@ -77,7 +89,7 @@ BEHAVIOUR:
 export async function getMemberContextByEmail(
   email: string
 ): Promise<MemberContextData | null> {
-  const { data: user } = await supabase
+  const { data: user } = await getSupabaseClient()
     .from('users')
     .select('id, name')
     .eq('email', email)
