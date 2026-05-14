@@ -1,5 +1,24 @@
 import { getSupabaseClient } from '@/lib/supabase'
 
+type UserRow = {
+  id: string
+  name: string
+  email: string
+  created_at: string
+  updated_at: string
+  avatar_url: string | null
+  metadata: Record<string, any> | null
+}
+
+type MemberContextRow = {
+  user_id: string
+  invited_by: string | null
+  relationship_to_inviter: string | null
+  why_invited: string | null
+  nick_notes: string | null
+  suggested_rizz_opener: string | null
+}
+
 export interface MemberContextData {
   userName: string
   invitedBy: string | null
@@ -16,7 +35,7 @@ export async function getMemberContext(
     .from('users')
     .select('name')
     .eq('id', userId)
-    .maybeSingle()
+    .maybeSingle() as { name: string } | null
 
   if (!user) return null
 
@@ -24,7 +43,7 @@ export async function getMemberContext(
     .from('member_context')
     .select('*')
     .eq('user_id', userId)
-    .single()
+    .single() as MemberContextRow | null
 
   return {
     userName: user.name,
@@ -76,7 +95,7 @@ export async function getMemberContextByEmail(
     .from('users')
     .select('id, name')
     .eq('email', email)
-    .maybeSingle()
+    .maybeSingle() as { id: string; name: string } | null
 
   if (!user) return null
   return getMemberContext(user.id)
