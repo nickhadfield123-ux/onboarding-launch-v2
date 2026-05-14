@@ -6,6 +6,7 @@
 <title>Rizz · Resourceful · Onboarding</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:system-ui,-apple-system,sans-serif}
@@ -923,8 +924,167 @@ function speakText(text) {
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// Init
+// ── Auth Integration ─────────────────────────────────────────────────────────
+
+// Initialize Supabase client
+const supabaseUrl = 'https://jsnbsecnvmwabytjinpa.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbmJzZWNudm13YWJ5dGppbnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY3ODI4NTAsImV4cCI6MjA1MjM1ODg1MH0.jF0t9x8gWQ6Gq8v8v8v8v8v8v8v8v8v8v8v8v8v8'
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+
+// Auth state management
+let currentAuthFlow = null
+let authEmail = null
+
+// Email blur utility - never show full emails in UI
+function blurEmail(email) {
+  const [local, domain] = email.split('@')
+  const domainParts = domain.split('.')
+  const tld = domainParts[domainParts.length - 1]
+  const domainName = domainParts[0]
+  return `${local[0]}${'•'.repeat(4)}@${domainName[0]}${'•'.repeat(3)}.${tld}`
+}
+
+// Auth conversation handlers
+function startAuthFlow() {
+  currentAuthFlow = 'collecting_email'
+  addMasterMsg("One last thing — I need a quick email confirmation to secure your account. What address should I use?", 'rizz')
+}
+
+function handleAuthEmail(email) {
+  authEmail = email
+  sessionStorage.setItem('pending_auth', 'true')
+
+  supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: window.location.href }
+  }).then(() => {
+    const blurred = blurEmail(email)
+    addMasterMsg(`Done — I've sent a confirmation link to ${blurred}. Click it and you'll be straight back in.`, 'rizz')
+    currentAuthFlow = 'waiting_magic_link'
+  }).catch(error => {
+    console.error('Auth error:', error)
+    addMasterMsg("Sorry, there was an issue sending the email. Can you try again?", 'rizz')
+    currentAuthFlow = null
+  })
+}
+
+function handleMagicLinkCallback() {
+  // Check if we have a valid session now
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session && sessionStorage.getItem('pending_auth')) {
+      sessionStorage.removeItem('pending_auth')
+
+      // Show remember device prompt
+      addMasterMsg(`You're verified — welcome to Resourceful, ${session.user.user_metadata?.name || 'friend'}!`, 'rizz')
+
+      setTimeout(() => {
+        addMasterMsg("Want me to keep you signed in on this device?", 'rizz', [
+          { text: "Yes, remember me", action: "remember_device" },
+          { text: "No thanks", action: "skip_remember" }
+        ])
+      }, 1000)
+    }
+  })
+}
+
+function handleRememberDevice() {
+  if (authEmail) {
+    localStorage.setItem('rf_remembered', 'true')
+    localStorage.setItem('rf_email_hint', blurEmail(authEmail))
+    localStorage.setItem('rf_email', authEmail)
+    addMasterMsg("Got it — I'll keep you signed in on this device.", 'rizz')
+  }
+}
+
+function handleSkipRemember() {
+  addMasterMsg("No problem — you'll need to sign in again next time.", 'rizz')
+}
+
+// Check auth state on page load
+async function checkAuthState() {
+  const { data: { session } } = await supabase.auth.getSession()
+
+  // Handle magic link callback
+  if (window.location.hash.includes('access_token')) {
+    handleMagicLinkCallback()
+    return
+  }
+
+  // Check for existing valid session
+  if (session && !sessionStorage.getItem('pending_auth')) {
+    // Valid session - greet user normally
+    const name = session.user.user_metadata?.name || 'friend'
+    addMasterMsg(`Welcome back, ${name}! Great to see you again.`, 'rizz')
+    return
+  }
+
+  // Check for remembered device
+  const isRemembered = localStorage.getItem('rf_remembered') === 'true'
+  const storedEmail = localStorage.getItem('rf_email')
+
+  if (isRemembered && storedEmail && !session) {
+    // Auto-send magic link to remembered email
+    const blurredHint = localStorage.getItem('rf_email_hint') || blurEmail(storedEmail)
+    addMasterMsg(`Welcome back — let me get you back in. I've sent a link to ${blurredHint}.`, 'rizz')
+
+    supabase.auth.signInWithOtp({
+      email: storedEmail,
+      options: { emailRedirectTo: window.location.href }
+    }).catch(error => {
+      console.error('Auto auth error:', error)
+      addMasterMsg("There was an issue with auto sign-in. What's your email?", 'rizz')
+    })
+  } else if (!session) {
+    // No session - check if we should start auth flow
+    // This will be triggered after user completes onboarding flow
+    setTimeout(() => {
+      if (!currentAuthFlow && !sessionStorage.getItem('pending_auth')) {
+        // For now, we'll start auth immediately for testing
+        // In production, this would be triggered by completing the onboarding flow
+        startAuthFlow()
+      }
+    }, 2000)
+  }
+}
+
+// Modified sendMsg to handle auth flows
+const originalSendMsg = window.sendMsg
+window.sendMsg = function() {
+  const input = document.getElementById('main-input')
+  const text = input.value.trim()
+  if (!text) return
+
+  // Handle auth flow responses
+  if (currentAuthFlow === 'collecting_email') {
+    handleAuthEmail(text)
+    input.value = ''
+    return
+  }
+
+  // Handle chip responses
+  if (text === 'Yes, remember me') {
+    handleRememberDevice()
+    input.value = ''
+    return
+  }
+  if (text === 'No thanks') {
+    handleSkipRemember()
+    input.value = ''
+    return
+  }
+
+  // Call original sendMsg for normal chat
+  if (originalSendMsg) {
+    originalSendMsg()
+  } else {
+    addMasterMsg(text, 'user')
+    input.value = ''
+  }
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
 updateVoiceButton();
+checkAuthState();
 </script>
 </body>
 </html>
