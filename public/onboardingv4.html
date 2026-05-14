@@ -929,7 +929,7 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 // Initialize Supabase client
 const supabaseUrl = 'https://jsnbsecnvmwabytjinpa.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbmJzZWNudm13YWJ5dGppbnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNzMzODMsImV4cCI6MjA4Njc0OTM4M30.oA-DKVRkCuN-id2bTKrCotN2N5xShKBXn8KYEO9lxKY'
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey)
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
 
 // Auth state management
 let currentAuthFlow = null
@@ -956,7 +956,7 @@ function handleAuthEmail(email) {
   authEmail = email
   sessionStorage.setItem('pending_auth', 'true')
 
-  supabase.auth.signInWithOtp({
+    supabaseClient.auth.signInWithOtp({
     email,
     options: { emailRedirectTo: window.location.href }
   }).then(() => {
@@ -972,7 +972,7 @@ function handleAuthEmail(email) {
 
 function handleMagicLinkCallback() {
   // Check if we have a valid session now
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
     if (session && sessionStorage.getItem('pending_auth')) {
       sessionStorage.removeItem('pending_auth')
 
@@ -1004,7 +1004,7 @@ function handleSkipRemember() {
 
 // Check auth state on page load
 async function checkAuthState() {
-  const { data: { session } } = await supabase.auth.getSession()
+  const { data: { session } } = await supabaseClient.auth.getSession()
 
   // Handle magic link callback
   if (window.location.hash.includes('access_token')) {
@@ -1029,7 +1029,7 @@ async function checkAuthState() {
     const blurredHint = localStorage.getItem('rf_email_hint') || blurEmail(storedEmail)
     addMasterMsg(`Welcome back — let me get you back in. I've sent a link to ${blurredHint}.`, 'rizz')
 
-    supabase.auth.signInWithOtp({
+  supabaseClient.auth.signInWithOtp({
       email: storedEmail,
       options: { emailRedirectTo: window.location.href }
     }).catch(error => {
@@ -1051,7 +1051,7 @@ function checkAuthTrigger() {
 }
 
 // Modified sendMsg to handle auth flows and track conversation
-const originalSendMsg = window.sendMsg
+const originalSendMsg = sendMsg
 window.sendMsg = function() {
   const input = document.getElementById('main-input')
   const text = input.value.trim()
