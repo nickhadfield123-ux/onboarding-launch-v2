@@ -16,7 +16,7 @@ export async function getMemberContext(
     .from('users')
     .select('name')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (!user) return null
 
@@ -76,7 +76,7 @@ export async function getMemberContextByEmail(
     .from('users')
     .select('id, name')
     .eq('email', email)
-    .single()
+    .maybeSingle()
 
   if (!user) return null
   return getMemberContext(user.id)
