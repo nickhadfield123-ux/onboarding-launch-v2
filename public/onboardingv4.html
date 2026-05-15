@@ -1011,46 +1011,11 @@ async function saveConversationHistory(email) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  if (window.location.search.includes('verified=true')) {
-    console.log('verified block running', window.location.search);
-    authTriggeredThisSession = true;
-    const email = new URLSearchParams(window.location.search).get('email');
-    if (email) {
-      userEmail = email;
-      try {
-        const res = await fetch(`/api/auth/get-history?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.messages?.length) {
-          masterHistory = data.messages;
-          // Don't immediately render messages when returning from a verified magic link
-          if (!window.location.search.includes('verified=true')) {
-            data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
-          }
-        }
-      } catch (e) { console.warn('Failed to load history', e); }
-    }
-
-    // If the user is returning verified, remove the static welcome message so it doesn't flash
-    if (window.location.search.includes('verified=true')) {
-      const staticWelcome = document.getElementById('welcome-msg');
-      if (staticWelcome) staticWelcome.remove();
-    }
-
-    setTimeout(async () => {
-      // Clear chat
-      const chatEl = document.getElementById('message-area');
-      if (chatEl) chatEl.innerHTML = '';
-      
-      // Single welcome-back message then Rizz answers
-      const lastUserMsg = masterHistory.filter(m => m.role === 'user').pop();
-      if (lastUserMsg) {
-        addMasterMsg(`Welcome back Joseph — you're all verified. You were asking about "${lastUserMsg.content}".`, 'rizz');
-        await processMessage(lastUserMsg.content);
-      } else {
-        addMasterMsg("Welcome back Joseph — you're all verified. What would you like to explore?", 'rizz');
-      }
-    }, 800);
-  }
+  setTimeout(async () => {
+    const chatEl = document.getElementById('message-area');
+    if (chatEl) chatEl.innerHTML = '';
+    addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
+  }, 800);
 });
 
 // Init
