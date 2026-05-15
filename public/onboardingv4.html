@@ -6,7 +6,6 @@
 <title>Rizz · Resourceful · Onboarding</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:system-ui,-apple-system,sans-serif}
@@ -585,6 +584,7 @@ const SECTIONS = {
 };
 
 let currentSection=null, rightFrameOpen=true;
+let authTriggeredThisSession = false;
 const masterHistory=[];
 
 // Voice settings
@@ -830,39 +830,13 @@ async function sendMsg(){
 async function sendChipMessage(text){await processMessage(text);}
 
 async function processMessage(text) {
-  // Phase 0: minimal trigger (per plan) - ensure only one insertion point here
   if (!authTriggeredThisSession) {
-    authTriggeredThisSession = true
-    startAuthFlow()
-    return
-  }
-  if (!authTriggeredThisSession) {
-    authTriggeredThisSession = true
-    startAuthFlow()
-    return
-  }
-  
-  if (!authTriggeredThisSession) {
-    authTriggeredThisSession = true
-    startAuthFlow()
-    return
-  }
-
-  addMasterMsg(text,'user');
-  masterHistory.push({role:'user',content:text});
-
-  // Check if auth should be triggered instead of normal response
-  if (userHasMessaged && !rizzHasResponded && !currentAuthFlow && !sessionStorage.getItem('pending_auth')) {
-    // This is the first user message - trigger auth instead of normal Rizz response
-    showTyping();
-    setTimeout(() => {
-      document.getElementById('typing-ind')?.remove();
-      startAuthFlow();
-    }, 1500); // Give time for typing indicator
+    authTriggeredThisSession = true;
+    startAuthFlow();
     return;
   }
-
-  // Normal Rizz response flow
+  addMasterMsg(text,'user');
+  masterHistory.push({role:'user',content:text});
   showTyping();
   try {
     const r=await fetch('/api/chat?invite_id=joseph-onboarding',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
@@ -955,185 +929,8 @@ function speakText(text) {
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 
-// ── Auth Integration ─────────────────────────────────────────────────────────
-
-// Initialize Supabase client
-const supabaseUrl = 'https://jsnbsecnvmwabytjinpa.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzbmJzZWNudm13YWJ5dGppbnBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNzMzODMsImV4cCI6MjA4Njc0OTM4M30.oA-DKVRkCuN-id2bTKrCotN2N5xShKBXn8KYEO9lxKY'
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey)
-
-// Auth state management
-let currentAuthFlow = null
-let authTriggeredThisSession = false
-let authEmail = null
-let userHasMessaged = false
-let rizzHasResponded = false
-let authTriggeredThisSessionFlagSet = false
-let userHasMessaged = false
-let rizzHasResponded = false
-let authTriggeredThisSession = false
-// 4-line minimal insertion per plan to trigger auth on first user message (no overrides) - ACTIVE in code base now
-
-// Email blur utility - never show full emails in UI
-function blurEmail(email) {
-  const [local, domain] = email.split('@')
-  const domainParts = domain.split('.')
-  const tld = domainParts[domainParts.length - 1]
-  const domainName = domainParts[0]
-  return `${local[0]}${'•'.repeat(4)}@${domainName[0]}${'•'.repeat(3)}.${tld}`
-}
-
-// Auth conversation handlers
-function startAuthFlow() {
-  currentAuthFlow = 'collecting_email'
-  addMasterMsg("I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?", 'rizz')
-} // Placeholder: actual trigger implemented with 4-line minimal insertion per plan.
-
-function handleAuthEmail(email) {
-  authEmail = email
-  sessionStorage.setItem('pending_auth', 'true')
-
-    supabaseClient.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: window.location.href }
-  }).then(() => {
-    const blurred = blurEmail(email)
-    addMasterMsg(`Done — I've sent a confirmation link to ${blurred}. Click it and you'll be straight back in.`, 'rizz')
-    currentAuthFlow = 'waiting_magic_link'
-  }).catch(error => {
-    console.error('Auth error:', error)
-    addMasterMsg("Sorry, there was an issue sending the email. Can you try again?", 'rizz')
-    currentAuthFlow = null
-  })
-}
-
-function handleMagicLinkCallback() {
-  // Check if we have a valid session now
-  supabaseClient.auth.getSession().then(({ data: { session } }) => {
-    if (session && sessionStorage.getItem('pending_auth')) {
-      sessionStorage.removeItem('pending_auth')
-
-      // Show remember device prompt
-      addMasterMsg(`You're verified — welcome to Resourceful, ${session.user.user_metadata?.name || 'friend'}!`, 'rizz')
-
-      setTimeout(() => {
-        addMasterMsg("Want me to keep you signed in on this device?", 'rizz', [
-          { text: "Yes, remember me", action: "remember_device" },
-          { text: "No thanks", action: "skip_remember" }
-        ])
-      }, 1000)
-    }
-  })
-}
-
-function handleRememberDevice() {
-  if (authEmail) {
-    localStorage.setItem('rf_remembered', 'true')
-    localStorage.setItem('rf_email_hint', blurEmail(authEmail))
-    localStorage.setItem('rf_email', authEmail)
-    addMasterMsg("Got it — I'll keep you signed in on this device.", 'rizz')
-  }
-}
-
-function handleSkipRemember() {
-  addMasterMsg("No problem — you'll need to sign in again next time.", 'rizz')
-}
-
-// Check auth state on page load
-async function checkAuthState() {
-  const { data: { session } } = await supabaseClient.auth.getSession()
-
-  // Handle magic link callback
-  if (window.location.hash.includes('access_token')) {
-    handleMagicLinkCallback()
-    return
-  }
-
-  // Check for existing valid session
-  if (session && !sessionStorage.getItem('pending_auth')) {
-    // Valid session - greet user normally
-    const name = session.user.user_metadata?.name || 'friend'
-    addMasterMsg(`Welcome back, ${name}! Great to see you again.`, 'rizz')
-    return
-  }
-
-  // Check for remembered device
-  const isRemembered = localStorage.getItem('rf_remembered') === 'true'
-  const storedEmail = localStorage.getItem('rf_email')
-
-  if (isRemembered && storedEmail && !session) {
-    // Auto-send magic link to remembered email
-    const blurredHint = localStorage.getItem('rf_email_hint') || blurEmail(storedEmail)
-    addMasterMsg(`Welcome back — let me get you back in. I've sent a link to ${blurredHint}.`, 'rizz')
-
-  supabaseClient.auth.signInWithOtp({
-      email: storedEmail,
-      options: { emailRedirectTo: window.location.href }
-    }).catch(error => {
-      console.error('Auto auth error:', error)
-      addMasterMsg("There was an issue with auto sign-in. What's your email?", 'rizz')
-    })
-  }
-  // Note: Auth flow will be triggered by conversation, not automatically
-}
-
-// Auth trigger is now handled directly in processMessage for first user interaction
-
-// Modified sendMsg to handle auth flows and track conversation
-const originalSendMsg = sendMsg
-window.sendMsg = function() {
-  const input = document.getElementById('main-input')
-  const text = input.value.trim()
-  if (!text) return
-
-  // Track that user has sent a message
-  userHasMessaged = true
-
-  // Handle auth flow responses
-  if (currentAuthFlow === 'collecting_email') {
-    handleAuthEmail(text)
-    input.value = ''
-    return
-  }
-
-  // Handle chip responses
-  if (text === 'Yes, remember me') {
-    handleRememberDevice()
-    input.value = ''
-    return
-  }
-  if (text === 'No thanks') {
-    handleSkipRemember()
-    input.value = ''
-    return
-  }
-
-  // Call original sendMsg for normal chat
-  if (originalSendMsg) {
-    originalSendMsg()
-  } else {
-    addMasterMsg(text, 'user')
-    input.value = ''
-  }
-}
-
-// Override addMasterMsg to track Rizz responses
-const originalAddMasterMsg = window.addMasterMsg
-window.addMasterMsg = function(text, type, suggestions) {
-  // Track that Rizz has responded
-  if (type === 'rizz') {
-    rizzHasResponded = true
-  }
-
-  // Call original addMasterMsg
-  if (originalAddMasterMsg) {
-    originalAddMasterMsg(text, type, suggestions)
-  }
-}
-
-// ── Init ─────────────────────────────────────────────────────────────────────
+// Init
 updateVoiceButton();
-checkAuthState();
 </script>
 </body>
 </html>
