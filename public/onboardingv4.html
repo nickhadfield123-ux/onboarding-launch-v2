@@ -1037,7 +1037,12 @@ document.addEventListener('DOMContentLoaded', async function() {
       } catch (e) { console.warn('Failed to load history', e); }
     }
     setTimeout(() => {
-      addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
+      const lastUserMsg = masterHistory.filter(m => m.role === 'user').pop();
+      const context = lastUserMsg ? ` You were asking about "${lastUserMsg.content}".` : '';
+      addMasterMsg(`Welcome back — you're all verified.${context} Let me pick up from there.`, 'rizz');
+      if (lastUserMsg) {
+        processMessage(lastUserMsg.content);
+      }
     }, 800);
   }
 });
