@@ -1022,10 +1022,28 @@ async function saveConversationHistory(email) {
 
 document.addEventListener('DOMContentLoaded', async function() {
   if (window.location.search.includes('verified=true')) {
+    // Immediately clear old messages so they don't flash before the welcome message
+    const chatEl = document.getElementById('message-area');
+    if (chatEl) chatEl.innerHTML = '';
+
     setTimeout(async () => {
-      const chatEl = document.getElementById('message-area');
-      if (chatEl) chatEl.innerHTML = '';
       addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
+
+      // Ask Rizz to continue based on stored history
+      showTyping();
+      try {
+        const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: masterHistory })
+        });
+        const data = await res.json();
+        document.getElementById('typing-ind')?.remove();
+        if (data.reply) addMasterMsg(data.reply, 'rizz');
+      } catch (e) {
+        console.warn('Failed to continue conversation:', e);
+        document.getElementById('typing-ind')?.remove();
+      }
     }, 800);
   }
 });
