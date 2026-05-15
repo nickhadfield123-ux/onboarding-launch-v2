@@ -524,7 +524,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:
 // Supabase — magic link auth
 const SUPABASE_URL = window.__NEXT_PUBLIC_SUPABASE_URL || window.ENV_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = window.__NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV_SUPABASE_ANON_KEY || '';
-const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+const supabaseClient = SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
 // Auth flow state
 let awaitEmailForAuth = false;
