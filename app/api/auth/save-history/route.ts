@@ -9,9 +9,16 @@ export async function POST(req: Request) {
   const { email, messages } = await req.json();
   if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
   
+  const filtered = messages.filter((m: {role: string, content: string}) => 
+    !m.content.includes('[email verified]') &&
+    !m.content.includes('magic link') &&
+    !m.content.includes('email confirmation') &&
+    !m.content.includes('What address should I use')
+  );
+
   const { error } = await supabase
     .from('rizz_chat_history')
-    .upsert({ email, messages, updated_at: new Date().toISOString() }, 
+    .upsert({ email, messages: filtered, updated_at: new Date().toISOString() }, 
              { onConflict: 'email' });
   
   if (error) return Response.json({ error }, { status: 500 });
