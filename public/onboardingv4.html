@@ -1040,9 +1040,9 @@ document.addEventListener('DOMContentLoaded', async function() {
       const lastUserMsg = masterHistory.filter(m => m.role === 'user').pop();
       const context = lastUserMsg ? ` You were asking about "${lastUserMsg.content}".` : '';
       addMasterMsg(`Welcome back — you're all verified.${context} Let me pick up from there.`, 'rizz');
-      if (lastUserMsg) {
-        processMessage(lastUserMsg.content);
-      }
+      setTimeout(() => {
+        if (lastUserMsg) processMessage(lastUserMsg.content);
+      }, 1000);
     }, 800);
   }
 });
