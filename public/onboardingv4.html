@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Rizz · Resourceful · Onboarding</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -520,6 +521,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:
 
 <script>
 // ── CONFIG ─────────────────────────────────────────────────────────────────
+// Supabase — magic link auth
+const SUPABASE_URL = window.__NEXT_PUBLIC_SUPABASE_URL || window.ENV_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = window.__NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV_SUPABASE_ANON_KEY || '';
+const supabase = SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
+// Auth flow state
+let awaitEmailForAuth = false;
+
 // The video call room to join — all call "Join" buttons navigate here
 const CALL_ROOM = 'meeting-temp-1';
 const CALL_URL = `/v2/room/${CALL_ROOM}?returnTo=/onboardingv4.html`;
@@ -822,9 +831,84 @@ function showTyping() {
   area.appendChild(el);area.scrollTop=area.scrollHeight;
 }
 
+async function startAuthFlow() {
+  // 1. Show Rizz asking for email
+  addMasterMsg("I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?", 'rizz');
+  masterHistory.push({role:'assistant',content:"I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?"});
+  // 2. Switch input to capture email
+  awaitEmailForAuth = true;
+  const inp = document.getElementById('main-input');
+  inp.placeholder = 'Enter your email address...';
+  inp.focus();
+}
+
+async function sendEmailForAuth(email) {
+  awaitEmailForAuth = false;
+  const inp = document.getElementById('main-input');
+  inp.placeholder = 'Reply to Rizz...';
+  inp.value = '';
+
+  // Show the user's email in chat (blurred)
+  addMasterMsg(email, 'user');
+  masterHistory.push({role:'user', content: email});
+
+  // Blur email for display
+  const blurEmail = (e) => {
+    const [local, domain] = e.split('@');
+    const domainParts = domain.split('.');
+    const tld = domainParts[domainParts.length - 1];
+    return `${local[0]}${'•'.repeat(4)}@${domainParts[0][0]}${'•'.repeat(3)}.${tld}`;
+  };
+  const blurred = blurEmail(email);
+
+  // Show typing indicator
+  showTyping();
+
+  try {
+    if (supabase) {
+      // Direct Supabase magic link via the client
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/onboardingv4.html` }
+      });
+      if (error) throw error;
+    } else {
+      // Fallback: try a server endpoint
+      const res = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (!res.ok) throw new Error('Server auth failed');
+    }
+
+    document.getElementById('typing-ind')?.remove();
+    addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`, 'rizz');
+    masterHistory.push({role:'assistant', content: `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`});
+    // Update right panel auth steps
+    const steps = document.querySelectorAll('.pi');
+    if (steps[2]) {
+      const dot = steps[2].querySelector('.pd');
+      const text = steps[2].querySelector('.pt-off, .pt-act, .pt-done');
+      if (dot) { dot.className = 'pd act'; }
+      if (text) { text.className = 'pt-act'; text.textContent = 'Email sent'; }
+    }
+  } catch (e) {
+    console.error('Auth error:', e);
+    document.getElementById('typing-ind')?.remove();
+    addMasterMsg(`I couldn't send a magic link to ${blurred}. Let's try again — what's your email?`, 'rizz');
+    masterHistory.push({role:'assistant', content: `I couldn't send a magic link to ${blurred}. Let's try again — what's your email?`});
+    awaitEmailForAuth = true;
+  }
+}
+
 async function sendMsg(){
   const inp=document.getElementById('main-input');
   const text=inp.value.trim();if(!text)return;inp.value='';
+  if (awaitEmailForAuth) {
+    await sendEmailForAuth(text);
+    return;
+  }
   await processMessage(text);
 }
 async function sendChipMessage(text){await processMessage(text);}
