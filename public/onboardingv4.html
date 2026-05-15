@@ -1036,18 +1036,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
       } catch (e) { console.warn('Failed to load history', e); }
     }
+
+    // If the user is returning verified, remove the static welcome message so it doesn't flash
+    if (window.location.search.includes('verified=true')) {
+      const staticWelcome = document.getElementById('welcome-msg');
+      if (staticWelcome) staticWelcome.remove();
+    }
+
     setTimeout(async () => {
-      const lastUserMsg = masterHistory.filter(m => m.role === 'user').pop();
-      
-      // Clear the chat display and show only the welcome-back message
-      const chatEl = document.getElementById('master-chat');
+      // Clear chat
+      const chatEl = document.getElementById('message-area');
       if (chatEl) chatEl.innerHTML = '';
       
+      // Single welcome-back message then Rizz answers
+      const lastUserMsg = masterHistory.filter(m => m.role === 'user').pop();
       if (lastUserMsg) {
         addMasterMsg(`Welcome back Joseph — you're all verified. You were asking about "${lastUserMsg.content}".`, 'rizz');
         await processMessage(lastUserMsg.content);
       } else {
-        addMasterMsg("Welcome back — you're all verified. What do you want to explore?", 'rizz');
+        addMasterMsg("Welcome back Joseph — you're all verified. What would you like to explore?", 'rizz');
       }
     }, 800);
   }
