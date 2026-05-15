@@ -1039,7 +1039,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         console.log('chat continuation status:', res.status);
         const data = await res.json();
-        console.log('chat continuation data:', data);
+        console.log('chat continuation data:', JSON.stringify(data));
         document.getElementById('typing-ind')?.remove();
         if (data.reply) addMasterMsg(data.reply, 'rizz');
       } catch (e) {
