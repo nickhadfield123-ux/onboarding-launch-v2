@@ -865,11 +865,12 @@ async function sendEmailForAuth(email) {
   showTyping();
 
   try {
-    const { error } = await supabase.auth.signInWithOtp({
-      email: email,
-      options: { emailRedirectTo: window.location.href }
+    const res = await fetch('/api/auth/send-magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email })
     });
-    if (error) throw error;
+    if (!res.ok) throw new Error('Failed to send magic link');
 
     document.getElementById('typing-ind')?.remove();
     addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`, 'rizz');
