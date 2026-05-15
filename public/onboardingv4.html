@@ -1041,7 +1041,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         const data = await res.json();
         console.log('chat continuation data:', JSON.stringify(data));
         document.getElementById('typing-ind')?.remove();
-        if (data.reply) addMasterMsg(data.reply, 'rizz');
+        const reply = data.reply || data.content || data.message;
+        if (reply) addMasterMsg(reply, 'rizz');
       } catch (e) {
         console.error('chat continuation error:', e);
         document.getElementById('typing-ind')?.remove();
