@@ -958,11 +958,10 @@ function toggleVoice() {
   localStorage.setItem('rizzVoice', voiceEnabled);
 updateVoiceButton();
 
-(async function(){
+document.addEventListener('DOMContentLoaded', async function() {
   if (window.location.search.includes('verified=true')) {
     console.log('verified block running', window.location.search);
     authTriggeredThisSession = true;
-
     const email = new URLSearchParams(window.location.search).get('email');
     if (email) {
       userEmail = email;
@@ -975,13 +974,11 @@ updateVoiceButton();
         }
       } catch (e) { console.warn('Failed to load history', e); }
     }
-
     setTimeout(() => {
       addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
     }, 800);
   }
-})();
-}
+});
 
 function updateVoiceButton() {
   const btn = document.getElementById('voice-toggle');
