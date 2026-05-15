@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   
   if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
 
-  const magicLink = `${process.env.NEXT_PUBLIC_APP_URL}/onboardingv4.html?verified=true`;
+  const magicLink = `https://onboarding-launch-v2.vercel.app/onboardingv4.html?verified=true`;
 
   const { error } = await resend.emails.send({
     from: 'Rizz <onboarding@resend.dev>',
