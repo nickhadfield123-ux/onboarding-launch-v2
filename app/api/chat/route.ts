@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Convert history format
     const messages = history.map((h: any) => ({
-      role: h.role === 'you' ? 'user' : 'assistant',
+      role: h.role === 'user' ? 'user' : 'assistant',
       content: h.content,
     }))
 
