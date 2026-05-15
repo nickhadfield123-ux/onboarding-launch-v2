@@ -441,17 +441,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:
                   <span id="history-pill-label">Earlier messages — tap to view</span>
                 </div>
 
-                <div class="message-group" id="welcome-msg" data-msg-id="0">
-                  <div class="bubble">Hey Joseph — Nick told me you're building in the Sacred Valley. What do you want to explore first?</div>
-                  <div class="message-chips">
-                    <button class="chip" onclick="sendChipMessage('What\'s live?')"><i class="ti ti-player-play" style="font-size:10px"></i>What's live?</button>
-                    <button class="chip" onclick="sendChipMessage('Which calls?')"><i class="ti ti-calendar" style="font-size:10px"></i>Which calls?</button>
-                    <button class="chip" onclick="sendChipMessage('Bounties for me')"><i class="ti ti-bolt" style="font-size:10px"></i>Bounties for me</button>
-                    <button class="chip" onclick="sendChipMessage('Who to meet')"><i class="ti ti-users" style="font-size:10px"></i>Who to meet</button>
-                    <button class="chip" onclick="sendChipMessage('Membership')"><i class="ti ti-id-badge" style="font-size:10px"></i>Membership</button>
-                    <button class="chip" onclick="sendChipMessage('My Rizz')"><i class="ti ti-brain" style="font-size:10px"></i>My Rizz</button>
-                  </div>
-                </div>
+                <div class="message-group" id="welcome-msg" data-msg-id="0"></div>
 
               </div><!-- /message-area -->
 
@@ -1032,7 +1022,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const data = await res.json();
         if (data.messages?.length) {
           masterHistory = data.messages;
-          data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
+          // Don't immediately render messages when returning from a verified magic link
+          if (!window.location.search.includes('verified=true')) {
+            data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
+          }
         }
       } catch (e) { console.warn('Failed to load history', e); }
     }
