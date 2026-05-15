@@ -13,7 +13,8 @@ export async function POST(req: Request) {
     !m.content.includes('[email verified]') &&
     !m.content.includes('magic link') &&
     !m.content.includes('email confirmation') &&
-    !m.content.includes('What address should I use')
+    !m.content.includes('What address should I use') &&
+    !m.content.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/) // filter out bare email addresses
   );
 
   const { error } = await supabase
