@@ -1031,6 +1031,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       // Ask Rizz to continue based on stored history
       try {
+        console.log('masterHistory at continuation:', JSON.stringify(masterHistory));
         showTyping();
         const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
           method: 'POST',
