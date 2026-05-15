@@ -909,8 +909,9 @@ async function sendChipMessage(text){await processMessage(text);}
 
 async function processMessage(text) {
   if (!authTriggeredThisSession) {
-    addMasterMsg(text,'user');
     authTriggeredThisSession = true;
+    masterHistory.push({role: 'user', content: text}); // capture pre-auth message
+    addMasterMsg(text, 'user');
     startAuthFlow();
     return;
   }
