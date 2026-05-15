@@ -1057,7 +1057,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: masterHistory })
+          body: JSON.stringify({ message: '', history: masterHistory })
         });
         const data = await res.json();
         document.getElementById('typing-ind')?.remove();
