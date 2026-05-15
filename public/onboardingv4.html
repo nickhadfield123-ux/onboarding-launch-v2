@@ -934,6 +934,7 @@ async function processMessage(text) {
     Object.keys(SECTIONS).forEach(k=>{if(txt.toLowerCase().includes(SECTIONS[k].title.toLowerCase())&&k!==currentSection)earnedHighlight(k);});
 
     // Persist conversation history to Supabase (if we have the user's email)
+    console.log('about to save, userEmail:', userEmail, 'history length:', masterHistory.length);
     try { if (userEmail) await saveConversationHistory(userEmail); } catch (e) { console.warn('Failed to save history', e); }
   } catch(e) {
     console.error('Chat error:', e);
