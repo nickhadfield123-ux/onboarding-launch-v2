@@ -951,7 +951,14 @@ function toggleFrameRight(){
 function toggleVoice() {
   voiceEnabled = !voiceEnabled;
   localStorage.setItem('rizzVoice', voiceEnabled);
-  updateVoiceButton();
+updateVoiceButton();
+
+if (window.location.search.includes('verified=true')) {
+  authTriggeredThisSession = true;
+  setTimeout(() => {
+    addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
+  }, 800);
+}
 }
 
 function updateVoiceButton() {
