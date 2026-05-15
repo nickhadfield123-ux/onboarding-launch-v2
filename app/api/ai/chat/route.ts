@@ -79,9 +79,7 @@ BEHAVIOUR:
 - Never make up facts about the platform. If you don't know, say you'll find out.`
 
           if (returnJson) {
-            systemPrompt += `
-
-Respond in JSON format: {"content": "your response text", "suggestions": [{"text": "suggestion", "topic": "bounty|network|calls|general"}]}`
+            systemPrompt += `\n\nRespond in JSON format: {"content": "your response text", "suggestions": [{"text": "suggestion", "topic": "bounty|network|calls|general"}]}`
           }
         } else {
           // Fallback to simple member context
