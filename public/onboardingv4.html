@@ -1030,18 +1030,20 @@ document.addEventListener('DOMContentLoaded', async function() {
       addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
 
       // Ask Rizz to continue based on stored history
-      showTyping();
       try {
+        showTyping();
         const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ messages: masterHistory })
         });
+        console.log('chat continuation status:', res.status);
         const data = await res.json();
+        console.log('chat continuation data:', data);
         document.getElementById('typing-ind')?.remove();
         if (data.reply) addMasterMsg(data.reply, 'rizz');
       } catch (e) {
-        console.warn('Failed to continue conversation:', e);
+        console.error('chat continuation error:', e);
         document.getElementById('typing-ind')?.remove();
       }
     }, 800);
