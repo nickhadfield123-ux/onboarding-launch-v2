@@ -957,28 +957,9 @@ function toggleVoice() {
   voiceEnabled = !voiceEnabled;
   localStorage.setItem('rizzVoice', voiceEnabled);
 updateVoiceButton();
+}
 
-document.addEventListener('DOMContentLoaded', async function() {
-  if (window.location.search.includes('verified=true')) {
-    console.log('verified block running', window.location.search);
-    authTriggeredThisSession = true;
-    const email = new URLSearchParams(window.location.search).get('email');
-    if (email) {
-      userEmail = email;
-      try {
-        const res = await fetch(`/api/auth/get-history?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.messages?.length) {
-          masterHistory = data.messages;
-          data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
-        }
-      } catch (e) { console.warn('Failed to load history', e); }
-    }
-    setTimeout(() => {
-      addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
-    }, 800);
-  }
-});
+
 
 function updateVoiceButton() {
   const btn = document.getElementById('voice-toggle');
@@ -1038,6 +1019,28 @@ async function saveConversationHistory(email) {
     body: JSON.stringify({ email, messages: masterHistory })
   });
 }
+
+document.addEventListener('DOMContentLoaded', async function() {
+  if (window.location.search.includes('verified=true')) {
+    console.log('verified block running', window.location.search);
+    authTriggeredThisSession = true;
+    const email = new URLSearchParams(window.location.search).get('email');
+    if (email) {
+      userEmail = email;
+      try {
+        const res = await fetch(`/api/auth/get-history?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.messages?.length) {
+          masterHistory = data.messages;
+          data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
+        }
+      } catch (e) { console.warn('Failed to load history', e); }
+    }
+    setTimeout(() => {
+      addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
+    }, 800);
+  }
+});
 
 // Init
 updateVoiceButton();
