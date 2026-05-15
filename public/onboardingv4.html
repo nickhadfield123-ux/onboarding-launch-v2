@@ -960,6 +960,7 @@ updateVoiceButton();
 
 (async function(){
   if (window.location.search.includes('verified=true')) {
+    console.log('verified block running', window.location.search);
     authTriggeredThisSession = true;
 
     const email = new URLSearchParams(window.location.search).get('email');
