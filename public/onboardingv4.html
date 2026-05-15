@@ -528,6 +528,7 @@ const supabaseClient = SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.creat
 
 // Auth flow state
 let awaitEmailForAuth = false;
+let userEmail = '';
 
 // The video call room to join — all call "Join" buttons navigate here
 const CALL_ROOM = 'meeting-temp-1';
@@ -860,6 +861,7 @@ async function sendEmailForAuth(email) {
     return `${local[0]}${'•'.repeat(4)}@${domainParts[0][0]}${'•'.repeat(3)}.${tld}`;
   };
   const blurred = blurEmail(email);
+  userEmail = email;
 
   // Show typing indicator
   showTyping();
@@ -930,6 +932,9 @@ async function processMessage(text) {
     masterHistory.push({role:'assistant',content:txt});
     if(currentSection) addSectionMsg(currentSection, txt);
     Object.keys(SECTIONS).forEach(k=>{if(txt.toLowerCase().includes(SECTIONS[k].title.toLowerCase())&&k!==currentSection)earnedHighlight(k);});
+
+    // Persist conversation history to Supabase (if we have the user's email)
+    try { if (userEmail) await saveConversationHistory(userEmail); } catch (e) { console.warn('Failed to save history', e); }
   } catch(e) {
     console.error('Chat error:', e);
     document.getElementById('typing-ind')?.remove();
@@ -953,12 +958,28 @@ function toggleVoice() {
   localStorage.setItem('rizzVoice', voiceEnabled);
 updateVoiceButton();
 
-if (window.location.search.includes('verified=true')) {
-  authTriggeredThisSession = true;
-  setTimeout(() => {
-    addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
-  }, 800);
-}
+(async function(){
+  if (window.location.search.includes('verified=true')) {
+    authTriggeredThisSession = true;
+
+    const email = new URLSearchParams(window.location.search).get('email');
+    if (email) {
+      userEmail = email;
+      try {
+        const res = await fetch(`/api/auth/get-history?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.messages?.length) {
+          masterHistory = data.messages;
+          data.messages.forEach(m => addMasterMsg(m.content, m.role === 'assistant' ? 'rizz' : 'user'));
+        }
+      } catch (e) { console.warn('Failed to load history', e); }
+    }
+
+    setTimeout(() => {
+      addMasterMsg("Welcome back — you're all verified. Let's pick up where we left off. What do you want to explore first?", 'rizz');
+    }, 800);
+  }
+})();
 }
 
 function updateVoiceButton() {
@@ -1010,6 +1031,15 @@ function speakText(text) {
 }
 
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+async function saveConversationHistory(email) {
+  if (!email) return;
+  await fetch('/api/auth/save-history', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, messages: masterHistory })
+  });
+}
 
 // Init
 updateVoiceButton();
