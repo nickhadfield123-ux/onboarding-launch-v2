@@ -1021,11 +1021,13 @@ async function saveConversationHistory(email) {
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
-  setTimeout(async () => {
-    const chatEl = document.getElementById('message-area');
-    if (chatEl) chatEl.innerHTML = '';
-    addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
-  }, 800);
+  if (window.location.search.includes('verified=true')) {
+    setTimeout(async () => {
+      const chatEl = document.getElementById('message-area');
+      if (chatEl) chatEl.innerHTML = '';
+      addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
+    }, 800);
+  }
 });
 
 // Init
