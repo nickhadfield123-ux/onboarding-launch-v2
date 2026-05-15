@@ -877,6 +877,8 @@ async function sendEmailForAuth(email) {
     document.getElementById('typing-ind')?.remove();
     addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`, 'rizz');
     masterHistory.push({role:'assistant', content: `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`});
+    masterHistory.push({role:'user', content: '[email verified]'});
+    await saveConversationHistory(email);
     // Update right panel auth steps
     const steps = document.querySelectorAll('.pi');
     if (steps[2]) {
@@ -1023,6 +1025,9 @@ async function saveConversationHistory(email) {
 
 document.addEventListener('DOMContentLoaded', async function() {
   if (window.location.search.includes('verified=true')) {
+    // Prevent the auth flow from re-triggering when returning verified
+    authTriggeredThisSession = true; // prevent auth re-triggering
+
     // Immediately clear old messages so they don't flash before the welcome message
     const chatEl = document.getElementById('message-area');
     if (chatEl) chatEl.innerHTML = '';
