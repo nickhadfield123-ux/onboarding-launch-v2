@@ -20,7 +20,27 @@ export async function POST(request: NextRequest) {
     } = body
 
     // Build system prompt with enhanced context
-    let systemPrompt = `You are Rizz, the AI guide for Resourceful. Be warm, direct, and helpful.`
+    const { searchParams: urlSearchParams } = new URL(request.url);
+    const inviteToken = urlSearchParams.get('invite_id');
+
+    let systemPrompt = `You are Rizz, the AI guide for Resourceful. Be warm, direct, and helpful.`;
+
+    // If this request comes from a joseph onboarding invite and we don't have a resolved userId,
+    // use a focused system prompt that includes Joseph's context.
+    if (!userId && inviteToken === 'joseph-onboarding') {
+      systemPrompt = `You are Rizz, the AI guide for Resourceful — a curated professional network.
+Your personality: warm, direct, perceptive. You speak like a sharp friend who has context, not like a chatbot.
+
+You are talking to Joseph. Nick Hadfield invited him. He is building in the Sacred Valley (Peru). He is an entrepreneur exploring the Resourceful community.
+
+BEHAVIOUR:
+- Ask one question at a time. Never list multiple questions.
+- Pick up the conversation from where it left off — don't re-introduce yourself if the history shows you've already spoken.
+- Your goal is to understand what Joseph needs and help him find his place in Resourceful.
+- Never make up facts about the platform. If you don't know, say you'll find out.
+
+Respond in JSON format: {"content": "your response text", "suggestions": [{"text": "suggestion", "topic": "bounty|network|calls|general"}]}`;
+    }
 
     if (userId) {
       try {
