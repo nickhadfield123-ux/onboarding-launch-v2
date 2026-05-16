@@ -60,8 +60,20 @@ export default function SuperuserPage() {
   const [currentMember, setCurrentMember] = useState<string | null>(null);
   const [showInviteResult, setShowInviteResult] = useState(false);
   const [inviteUrl, setInviteUrl] = useState('');
+  const [rizzSubTab, setRizzSubTab] = useState<'core' | 'knowledge' | 'git' | 'status'>('core');
 
   const updateRizzPanel = () => {
+    if (currentTab === 'rizz-intelligence') {
+      return {
+        title: 'Rizz Intelligence',
+        msg: "You're editing Rizz's intelligence layer. Changes to Core Prompts take effect on the next conversation. Knowledge Base changes are immediate.",
+        showDetail: false,
+        possibility: '',
+        rizzCtx: '',
+        thread: []
+      };
+    }
+
     if (currentMember && members[currentMember]) {
       return {
         title: members[currentMember].name,
@@ -96,6 +108,9 @@ export default function SuperuserPage() {
     setCurrentTab(tab);
     if (tab !== 'members') {
       setCurrentMember(null);
+    }
+    if (tab !== 'rizz-intelligence') {
+      setRizzSubTab('core');
     }
   };
 
@@ -167,6 +182,12 @@ export default function SuperuserPage() {
             <svg className="nav-icon w-[15px] h-[15px]" viewBox="0 0 15 15" fill="none"><path d="M2 3h11v7H8.5L6 12.5V10H2V3z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/></svg>
             Async threads <span className="nav-badge ml-auto bg-[#e0dfd8] text-[#5f5e5a] text-[10px] font-medium rounded-[10px] px-1.5">1</span>
           </div>
+
+          <div className="nav-label mt-3">Intelligence</div>
+          <div className={`nav-item flex items-center gap-2 px-2.5 py-2 rounded-lg cursor-pointer text-sm text-[#444441] ${currentTab === 'rizz-intelligence' ? 'active bg-[#eeedfe] text-[#534AB7] font-medium' : 'hover:bg-[#f1efe8]'}`} onClick={() => handleSetTab('rizz-intelligence')}>
+            <svg className="nav-icon w-[15px] h-[15px]" viewBox="0 0 15 15" fill="none"><path d="M7.5 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z" stroke="currentColor" strokeWidth="1.2"/><path d="M5 7.5h5M7.5 5v5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/></svg>
+            Rizz Intelligence
+          </div>
         </div>
 
             {/* Center Content (dark inner screen) */}
@@ -217,6 +238,105 @@ export default function SuperuserPage() {
                   })}
                 </div>
               </>
+            )}
+
+            {currentTab === 'rizz-intelligence' && (
+              <div>
+                <div className="tab-pills flex gap-2 mb-4">
+                  <div className={`tab-pill px-3 py-1 rounded-full text-sm cursor-pointer ${rizzSubTab === 'core' ? 'active bg-[#534AB7] text-white' : 'border border-[#e0dfd8] text-[#888780]'}`} onClick={() => setRizzSubTab('core')}>Core Prompts</div>
+                  <div className={`tab-pill px-3 py-1 rounded-full text-sm cursor-pointer ${rizzSubTab === 'knowledge' ? 'active bg-[#534AB7] text-white' : 'border border-[#e0dfd8] text-[#888780]'}`} onClick={() => setRizzSubTab('knowledge')}>Knowledge Base</div>
+                  <div className={`tab-pill px-3 py-1 rounded-full text-sm cursor-pointer ${rizzSubTab === 'git' ? 'active bg-[#534AB7] text-white' : 'border border-[#e0dfd8] text-[#888780]'}`} onClick={() => setRizzSubTab('git')}>Git Context</div>
+                  <div className={`tab-pill px-3 py-1 rounded-full text-sm cursor-pointer ${rizzSubTab === 'status' ? 'active bg-[#534AB7] text-white' : 'border border-[#e0dfd8] text-[#888780]'}`} onClick={() => setRizzSubTab('status')}>System Status</div>
+                </div>
+
+                {/* Core Prompts */}
+                {rizzSubTab === 'core' && (
+                  <div className="space-y-6">
+                    <div className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-4">
+                      <div className="section-label text-[#888780] mb-2">Global Rizz Prompt</div>
+                      <textarea className="form-textarea w-full h-32 bg-[#0d1322] text-white border border-[#333] rounded-lg p-3" defaultValue="You are Rizz, the AI guide for Resourceful. Be warm, direct, and helpful." />
+                      <button className="gen-btn mt-3">Save Global Prompt</button>
+                    </div>
+
+                    <div>
+                      <div className="section-label text-[#888780] mb-2">Per-Person Prompts</div>
+                      <div className="space-y-2">
+                        {Object.keys(members).map((key) => (
+                          <details key={key} className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-4">
+                            <summary className="cursor-pointer font-medium text-white">{members[key].name} ({key})</summary>
+                            <textarea className="form-textarea w-full h-24 bg-[#0d1322] text-white border border-[#333] rounded-lg p-3 mt-3" defaultValue={members[key].rizz_ctx} />
+                            <button className="gen-btn mt-2 text-sm">Save Prompt</button>
+                          </details>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Knowledge Base */}
+                {rizzSubTab === 'knowledge' && (
+                  <div className="space-y-6">
+                    <div>
+                      <div className="section-label text-[#888780] mb-2">Global Knowledge Base</div>
+                      <div className="space-y-2">
+                        <div className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-3 flex justify-between items-center">
+                          <span>Platform Brief</span>
+                          <button className="text-red-400 text-sm">Remove</button>
+                        </div>
+                        <div className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-3 flex justify-between items-center">
+                          <span>Token Economics</span>
+                          <button className="text-red-400 text-sm">Remove</button>
+                        </div>
+                        <div className="flex gap-2 mt-2">
+                          <input className="form-input flex-1" placeholder="New entry title" />
+                          <button className="gen-btn">Add</button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="section-label text-[#888780] mb-2">Per-Person Knowledge</div>
+                      {Object.keys(members).map((key) => (
+                        <div key={key} className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-4 mb-3">
+                          <div className="font-medium mb-2">{members[key].name}</div>
+                          <textarea className="form-textarea w-full h-20 mb-2" placeholder="rizz_context" defaultValue={members[key].rizz_ctx} />
+                          <textarea className="form-textarea w-full h-16" placeholder="possibility" defaultValue={members[key].possibility} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Git Context */}
+                {rizzSubTab === 'git' && (
+                  <div className="card bg-[#1a1a1f] border border-[#333] rounded-xl p-4">
+                    <div className="section-label text-[#888780] mb-3">Last 3 Commits</div>
+                    <div className="space-y-2 text-sm">
+                      <div>feat: add call link to superuser</div>
+                      <div>fix: verified return message</div>
+                      <div>chore: update rizz context endpoint</div>
+                    </div>
+                    <div className="text-xs text-[#888780] mt-3">Source: /api/superuser/git-context</div>
+                  </div>
+                )}
+
+                {/* System Status */}
+                {rizzSubTab === 'status' && (
+                  <div className="space-y-2">
+                    {[
+                      { name: 'Onboarding API', status: 'green' },
+                      { name: 'Magic Link API', status: 'green' },
+                      { name: 'Rizz Context Endpoint', status: 'amber' },
+                      { name: 'TTS Endpoint', status: 'green' }
+                    ].map((item, i) => (
+                      <div key={i} className="card bg-[#1a1a1f] border border-[#333] rounded-xl px-4 py-3 flex justify-between items-center">
+                        <span>{item.name}</span>
+                        <div className={`w-3 h-3 rounded-full ${item.status === 'green' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
 
             {/* Other tabs */}
