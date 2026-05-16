@@ -831,8 +831,10 @@ async function sendInitialGreeting() {
     const name = data.name || 'Joseph';
     const greetingBody = data.rizzContext || "Nick's told me great things. Let's first get your email so we can verify you and get started.";
     addMasterMsg(`Welcome ${name} — ${greetingBody}`, 'rizz');
+    awaitEmailForAuth = true;
   } catch (e) {
     addMasterMsg("Welcome Joseph — Nick's told me great things. Let's first get your email so we can verify you and get started.", 'rizz');
+    awaitEmailForAuth = true;
   }
 }
 
