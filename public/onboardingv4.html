@@ -835,19 +835,15 @@ function showTyping() {
 async function sendInitialGreeting() {
   if (window.location.search.includes('verified=true')) return;
 
-  // Always show the correct first message (use "Joseph" as reliable fallback)
-  const name = 'Joseph';
-  addMasterMsg(`Welcome ${name} — Nick's told me great things. Let's first get your email so we can verify you and get started.`, 'rizz');
-
-  // Optional: try to fetch real name later (non-blocking)
-  fetch('/api/rizz/context?invite_id=joseph-onboarding')
-    .then(r => r.json())
-    .then(data => {
-      if (data.name && data.name !== name) {
-        // Could replace the message if we want live update, but for now we keep it simple
-      }
-    })
-    .catch(() => {});
+  try {
+    const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
+    const data = await res.json();
+    const name = data.name || 'Joseph';
+    const greetingBody = data.rizzContext || "Nick's told me great things. Let's first get your email so we can verify you and get started.";
+    addMasterMsg(`Welcome ${name} — ${greetingBody}`, 'rizz');
+  } catch (e) {
+    addMasterMsg("Welcome Joseph — Nick's told me great things. Let's first get your email so we can verify you and get started.", 'rizz');
+  }
 }
 
 async function startAuthFlow() {
@@ -889,10 +885,18 @@ async function sendEmailForAuth(email) {
     if (!res.ok) throw new Error('Failed to send magic link');
 
     document.getElementById('typing-ind')?.remove();
-    addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam) and click to verify. We'll pick up right where we left off.`, 'rizz');
-    masterHistory.push({role:'assistant', content: `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`});
+    const confirmationMsg = `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam) and click to verify. We'll pick up right where we left off.`;
+    addMasterMsg(confirmationMsg, 'rizz');
+    masterHistory.push({role:'assistant', content: confirmationMsg});
     masterHistory.push({role:'user', content: '[email verified]'});
     await saveConversationHistory(email);
+  } catch (error) {
+    document.getElementById('typing-ind')?.remove();
+    const fallbackMsg = `I've noted your email. Check your inbox shortly for the magic link.`;
+    addMasterMsg(fallbackMsg, 'rizz');
+    masterHistory.push({role:'assistant', content: fallbackMsg});
+    console.error('Magic link error:', error);
+  }
     // Update right panel auth steps
     const steps = document.querySelectorAll('.pi');
     if (steps[2]) {
