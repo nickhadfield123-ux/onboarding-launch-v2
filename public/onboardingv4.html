@@ -835,7 +835,7 @@ function showTyping() {
 async function sendInitialGreeting() {
   if (window.location.search.includes('verified=true')) return;
   try {
-    const res = await fetch('/api/v2/rizz/context?invite_id=joseph-onboarding');
+    const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
     const data = await res.json();
     const name = data.name || 'there';
     const greeting = data.rizzContext || "Nick's told me great things about you. Let's get you verified so we can dive in.";
