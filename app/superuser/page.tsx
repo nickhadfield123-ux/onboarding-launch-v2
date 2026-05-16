@@ -113,36 +113,37 @@ export default function SuperuserPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f4f0]">
-      {/* Topbar */}
-      <div className="topbar bg-white border-b border-[#e0dfd8] h-11 flex items-center px-4 gap-3 flex-shrink-0">
-        <div className="topbar-logo flex items-center gap-1.5 text-sm font-medium text-[#534AB7]">
-          <div className="topbar-logo-icon w-5 h-5 rounded-full bg-[#534AB7] flex items-center justify-center">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-              <circle cx="6" cy="6" r="4" stroke="#eeedfe" strokeWidth="1.5" />
-              <path d="M6 3v3l2 1" stroke="#eeedfe" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
+    <div className="min-h-screen bg-[#1a1a1f] p-8">
+      <div className="max-w-[1100px] mx-auto">
+        {/* Topbar */}
+        <div className="topbar bg-white border-b border-[#e0dfd8] h-11 flex items-center px-4 gap-3 flex-shrink-0 rounded-t-2xl">
+          <div className="topbar-logo flex items-center gap-1.5 text-sm font-medium text-[#534AB7]">
+            <div className="topbar-logo-icon w-5 h-5 rounded-full bg-[#534AB7] flex items-center justify-center">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <circle cx="6" cy="6" r="4" stroke="#eeedfe" strokeWidth="1.5" />
+                <path d="M6 3v3l2 1" stroke="#eeedfe" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </div>
+            Resourceful
           </div>
-          Resourceful
+          <div className="topbar-title text-sm font-medium text-[#1a1a1f] flex-1 ml-1">Superuser · Nick Hadfield</div>
+          <div className="topbar-right flex items-center gap-2.5">
+            <div className="topbar-icon w-7 h-7 rounded-full bg-[#f1efe8] flex items-center justify-center cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <circle cx="6" cy="6" r="4" stroke="#888780" strokeWidth="1.2" />
+                <path d="M9.5 9.5l2.5 2.5" stroke="#888780" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="topbar-icon w-7 h-7 rounded-full bg-[#f1efe8] flex items-center justify-center cursor-pointer">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M7 2a2 2 0 0 1 2 2v3l1 1v1H4v-1l1-1V4a2 2 0 0 1 2-2zm-1 8h2" stroke="#888780" strokeWidth="1.2" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div className="avatar-n w-7 h-7 rounded-full bg-[#534AB7] text-[#eeedfe] text-xs font-medium flex items-center justify-center">N</div>
+          </div>
         </div>
-        <div className="topbar-title text-sm font-medium text-[#1a1a1f] flex-1 ml-1">Superuser · Nick Hadfield</div>
-        <div className="topbar-right flex items-center gap-2.5">
-          <div className="topbar-icon w-7 h-7 rounded-full bg-[#f1efe8] flex items-center justify-center cursor-pointer">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <circle cx="6" cy="6" r="4" stroke="#888780" strokeWidth="1.2" />
-              <path d="M9.5 9.5l2.5 2.5" stroke="#888780" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div className="topbar-icon w-7 h-7 rounded-full bg-[#f1efe8] flex items-center justify-center cursor-pointer">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M7 2a2 2 0 0 1 2 2v3l1 1v1H4v-1l1-1V4a2 2 0 0 1 2-2zm-1 8h2" stroke="#888780" strokeWidth="1.2" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div className="avatar-n w-7 h-7 rounded-full bg-[#534AB7] text-[#eeedfe] text-xs font-medium flex items-center justify-center">N</div>
-        </div>
-      </div>
 
-      <div className="main flex flex-1 overflow-hidden">
+        <div className="main flex flex-1 overflow-hidden bg-[#f5f4f0] rounded-b-2xl border border-t-0 border-[#e0dfd8]">
         {/* Left Nav */}
         <div className="left-nav w-[210px] bg-white border-r border-[#e0dfd8] flex-shrink-0 p-3 flex flex-col gap-0.5">
           <div className="nav-label text-[10px] text-[#888780] font-medium uppercase tracking-[0.06em] px-2.5 py-1">Manage</div>
@@ -168,8 +169,8 @@ export default function SuperuserPage() {
           </div>
         </div>
 
-        {/* Center Content */}
-        <div className="center flex-1 overflow-y-auto bg-[#f5f4f0] p-3.5">
+            {/* Center Content (dark inner screen) */}
+            <div className="center flex-1 overflow-y-auto bg-[#0d1322] p-3.5 text-white">
           <div className="center-inner flex flex-col gap-2.5">
             {currentTab === 'members' && (
               <>
@@ -226,7 +227,7 @@ export default function SuperuserPage() {
           </div>
         </div>
 
-        {/* Right Panel */}
+        {/* Right Panel (white) */}
         <div className="right-panel w-[230px] bg-white border-l border-[#e0dfd8] flex-shrink-0 flex flex-col">
           <div className="rp-header px-3 py-2.5 border-b border-[#e0dfd8] text-xs font-medium text-[#1a1a1f] flex items-center gap-1.5">
             <div className="rp-dot w-1.5 h-1.5 rounded-full bg-[#1D9E75] flex-shrink-0"></div>
