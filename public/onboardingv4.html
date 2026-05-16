@@ -834,24 +834,7 @@ function showTyping() {
 
 async function sendInitialGreeting() {
   if (window.location.search.includes('verified=true')) return;
-  showTyping();
-  try {
-    const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        messages: [],
-        initialGreeting: true
-      })
-    });
-    const data = await res.json();
-    document.getElementById('typing-ind')?.remove();
-    const reply = data.reply || data.content || data.message;
-    if (reply) addMasterMsg(reply, 'rizz');
-  } catch (e) {
-    document.getElementById('typing-ind')?.remove();
-    addMasterMsg("Hey Joe — Nick sent me to get you set up, drop your email and we'll get started.", 'rizz');
-  }
+  addMasterMsg("welcome 'xxxxx' - Nick's told me great things. Let's first get your email to get you verified, and we can find out more about how we can help each other!", 'rizz');
 }
 
 async function startAuthFlow() {
@@ -1065,36 +1048,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (e) { console.warn('Failed to load history', e); }
       }
 
-      // 2. Show welcome-back message
-      addMasterMsg("Welcome back Joseph — you're all verified. Let me pick up where we left off.", 'rizz');
-
-      // 3. Now continue with history loaded
-      console.log('masterHistory at continuation:', JSON.stringify(masterHistory));
-      // Show a focused welcome-back message and skip automatic API continuation
-      addMasterMsg("You're verified and good to go, Joseph. There's a live call happening today with the rest of the test cohort — that's the best next move. Want me to pull up the details?", 'rizz');
-
-      // If the continuation API is used elsewhere, ensure we parse JSON replies safely
-      // (left here for parity with other handlers)
-      /*
-      try {
-        showTyping();
-        const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: '', history: masterHistory })
-        });
-        const data = await res.json();
-        document.getElementById('typing-ind')?.remove();
-        let reply = data.reply || data.content || data.message;
-        if (typeof reply === 'string' && reply.trim().startsWith('{')) {
-          try { reply = JSON.parse(reply).content; } catch(e) {}
-        }
-        if (reply) addMasterMsg(reply, 'rizz');
-      } catch (e) {
-        console.error('chat continuation error:', e);
-        document.getElementById('typing-ind')?.remove();
-      }
-      */
+      // Show single verified welcome-back message
+      addMasterMsg("Welcome back 'XXXX' you're all verified - what do you want to dive into?", 'rizz');
     }, 800);
   } else {
     // Normal first load — fire Rizz initial greeting
