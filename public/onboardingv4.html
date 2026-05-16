@@ -1035,9 +1035,17 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (e) { console.warn('Failed to load history', e); }
       }
 
-      // Show single verified welcome-back message
+      // Show single verified welcome-back message + quick options
       const verifiedName = new URLSearchParams(window.location.search).get('name') || 'Joseph';
-      addMasterMsg(`Welcome back ${verifiedName} — we've confirmed your email. What can I help you with?`, 'rizz');
+      addMasterMsg(
+        `Welcome back ${verifiedName} — we've confirmed your email. What can I help you with?`,
+        'rizz',
+        [
+          "see details of today's call with Nick",
+          "tour the onboarding hub",
+          "talk about your projects"
+        ]
+      );
     }, 800);
   } else {
     // Normal first load — fire Rizz initial greeting
