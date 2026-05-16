@@ -838,10 +838,9 @@ async function sendInitialGreeting() {
     const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
     const data = await res.json();
     const name = data.name || 'there';
-    const greeting = data.rizzContext || "Nick's told me great things about you. Let's get you verified so we can dive in.";
-    addMasterMsg(`welcome ${name} - ${greeting}`, 'rizz');
+    addMasterMsg(`Welcome ${name} — Nick's told me great things. Let's first get your email so we can verify you and get started.`, 'rizz');
   } catch (e) {
-    addMasterMsg("welcome there - Nick's told me great things. Let's first get your email to get you verified.", 'rizz');
+    addMasterMsg("Welcome there — Nick's told me great things. Let's first get your email so we can verify you and get started.", 'rizz');
   }
 }
 
@@ -884,7 +883,7 @@ async function sendEmailForAuth(email) {
     if (!res.ok) throw new Error('Failed to send magic link');
 
     document.getElementById('typing-ind')?.remove();
-    addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`, 'rizz');
+    addMasterMsg(`Great — I've sent a magic link to ${blurred}. Check your inbox (and spam) and click to verify. We'll pick up right where we left off.`, 'rizz');
     masterHistory.push({role:'assistant', content: `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam folder) and click to verify. We'll pick up right where we left off.`});
     masterHistory.push({role:'user', content: '[email verified]'});
     await saveConversationHistory(email);
@@ -1057,7 +1056,8 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
 
       // Show single verified welcome-back message
-      addMasterMsg("Welcome back 'XXXX' you're all verified - what do you want to dive into?", 'rizz');
+      const verifiedName = new URLSearchParams(window.location.search).get('name') || 'there';
+      addMasterMsg(`Welcome back ${verifiedName} — we've confirmed your email. What can I help you with?`, 'rizz');
     }, 800);
   } else {
     // Normal first load — fire Rizz initial greeting
