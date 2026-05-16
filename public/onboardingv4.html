@@ -834,7 +834,15 @@ function showTyping() {
 
 async function sendInitialGreeting() {
   if (window.location.search.includes('verified=true')) return;
-  addMasterMsg("welcome 'xxxxx' - Nick's told me great things. Let's first get your email to get you verified, and we can find out more about how we can help each other!", 'rizz');
+  try {
+    const res = await fetch('/api/v2/rizz/context?invite_id=joseph-onboarding');
+    const data = await res.json();
+    const name = data.name || 'there';
+    const greeting = data.rizzContext || "Nick's told me great things about you. Let's get you verified so we can dive in.";
+    addMasterMsg(`welcome ${name} - ${greeting}`, 'rizz');
+  } catch (e) {
+    addMasterMsg("welcome there - Nick's told me great things. Let's first get your email to get you verified.", 'rizz');
+  }
 }
 
 async function startAuthFlow() {
