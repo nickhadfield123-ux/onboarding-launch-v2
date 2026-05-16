@@ -516,6 +516,10 @@ const SUPABASE_URL = window.__NEXT_PUBLIC_SUPABASE_URL || window.ENV_SUPABASE_UR
 const SUPABASE_ANON_KEY = window.__NEXT_PUBLIC_SUPABASE_ANON_KEY || window.ENV_SUPABASE_ANON_KEY || '';
 const supabaseClient = SUPABASE_URL && SUPABASE_ANON_KEY ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// Call details (editable here for now — will move to superuser later)
+const TODAYS_CALL_LINK = 'https://meet.google.com/xxx-xxxx-xxx';
+const TODAYS_CALL_TIME = 'Today at 3pm UTC';
+
 // Auth flow state
 let awaitEmailForAuth = false;
 let userEmail = '';
@@ -893,7 +897,13 @@ async function sendMsg(){
   }
   await processMessage(text);
 }
-async function sendChipMessage(text){await processMessage(text);}
+async function sendChipMessage(text) {
+  if (text === 'Join the call') {
+    window.location.href = CALL_URL;
+    return;
+  }
+  await processMessage(text);
+}
 
 async function processMessage(text) {
   if (!authTriggeredThisSession) {
@@ -1052,19 +1062,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         const chips = document.querySelectorAll('.message-chips .chip');
         chips.forEach(chip => {
           if (chip.textContent.includes("see details of today's call")) {
-            chip.onclick = async () => {
-              try {
-                const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
-                const data = await res.json();
-                const link = data.callLink || 'https://meet.google.com/xxx-xxxx-xxx';
-                const time = data.callTime || 'Today';
-                addMasterMsg(
-                  `Here's today's call with Nick:\n\n📅 ${time}\n🔗 Join here: ${link}\n\nClick the link to join!`,
-                  'rizz'
-                );
-              } catch (e) {
-                addMasterMsg("Here's the link to today's call with Nick: https://meet.google.com/xxx-xxxx-xxx", 'rizz');
-              }
+            chip.onclick = () => {
+              addMasterMsg(
+                `Here's today's call with Nick:\n\n📅 ${TODAYS_CALL_TIME}\n\nClick below to join the call:`,
+                'rizz',
+                ['Join the call']
+              );
             };
           }
         });
