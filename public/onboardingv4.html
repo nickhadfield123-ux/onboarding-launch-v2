@@ -1046,6 +1046,29 @@ document.addEventListener('DOMContentLoaded', async function() {
           "talk about your projects"
         ]
       );
+
+      // Special handler for the call details chip
+      setTimeout(() => {
+        const chips = document.querySelectorAll('.message-chips .chip');
+        chips.forEach(chip => {
+          if (chip.textContent.includes("see details of today's call")) {
+            chip.onclick = async () => {
+              try {
+                const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
+                const data = await res.json();
+                const link = data.callLink || 'https://meet.google.com/xxx-xxxx-xxx';
+                const time = data.callTime || 'Today';
+                addMasterMsg(
+                  `Here's today's call with Nick:\n\n📅 ${time}\n🔗 Join here: ${link}\n\nClick the link to join!`,
+                  'rizz'
+                );
+              } catch (e) {
+                addMasterMsg("Here's the link to today's call with Nick: https://meet.google.com/xxx-xxxx-xxx", 'rizz');
+              }
+            };
+          }
+        });
+      }, 100);
     }, 800);
   } else {
     // Normal first load — fire Rizz initial greeting
