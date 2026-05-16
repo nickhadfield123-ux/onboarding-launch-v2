@@ -834,14 +834,20 @@ function showTyping() {
 
 async function sendInitialGreeting() {
   if (window.location.search.includes('verified=true')) return;
-  try {
-    const res = await fetch('/api/rizz/context?invite_id=joseph-onboarding');
-    const data = await res.json();
-    const name = data.name || 'there';
-    addMasterMsg(`Welcome ${name} — Nick's told me great things. Let's first get your email so we can verify you and get started.`, 'rizz');
-  } catch (e) {
-    addMasterMsg("Welcome there — Nick's told me great things. Let's first get your email so we can verify you and get started.", 'rizz');
-  }
+
+  // Always show the correct first message (use "Joseph" as reliable fallback)
+  const name = 'Joseph';
+  addMasterMsg(`Welcome ${name} — Nick's told me great things. Let's first get your email so we can verify you and get started.`, 'rizz');
+
+  // Optional: try to fetch real name later (non-blocking)
+  fetch('/api/rizz/context?invite_id=joseph-onboarding')
+    .then(r => r.json())
+    .then(data => {
+      if (data.name && data.name !== name) {
+        // Could replace the message if we want live update, but for now we keep it simple
+      }
+    })
+    .catch(() => {});
 }
 
 async function startAuthFlow() {
@@ -1056,7 +1062,7 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
 
       // Show single verified welcome-back message
-      const verifiedName = new URLSearchParams(window.location.search).get('name') || 'there';
+      const verifiedName = new URLSearchParams(window.location.search).get('name') || 'Joseph';
       addMasterMsg(`Welcome back ${verifiedName} — we've confirmed your email. What can I help you with?`, 'rizz');
     }, 800);
   } else {
