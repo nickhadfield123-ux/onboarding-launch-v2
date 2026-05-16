@@ -496,7 +496,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#f0ede8;font-family:
     <div class="ipad-right-frame" id="ipadRightFrame">
       <div class="rp">
         <div class="rp-head"><div class="rp-av">R</div><div><div class="rp-name">Rizz</div><div class="rp-sub">AI Assistant</div></div></div>
-        <div class="rp-bubble">Welcome, Joseph! I'm Rizz, your AI onboarding guide. Let's get you set up in the Resourceful community.</div>
+        <div class="rp-bubble" id="rizz-static-greeting" style="display:none"></div>
         <div class="pi"><div class="pd done"></div><span class="pt-done">Verified by Nick</span></div>
         <div class="pi"><div class="pd act"></div><span class="pt-act">Introductions</span></div>
         <div class="pi"><div class="pd off"></div><span class="pt-off">Email & account</span></div>
@@ -832,14 +832,32 @@ function showTyping() {
   area.appendChild(el);area.scrollTop=area.scrollHeight;
 }
 
+async function sendInitialGreeting() {
+  if (window.location.search.includes('verified=true')) return;
+  showTyping();
+  try {
+    const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        messages: [],
+        initialGreeting: true
+      })
+    });
+    const data = await res.json();
+    document.getElementById('typing-ind')?.remove();
+    const reply = data.reply || data.content || data.message;
+    if (reply) addMasterMsg(reply, 'rizz');
+  } catch (e) {
+    document.getElementById('typing-ind')?.remove();
+    addMasterMsg("Hey Joe — Nick sent me to get you set up, drop your email and we'll get started.", 'rizz');
+  }
+}
+
 async function startAuthFlow() {
-  // 1. Show Rizz asking for email
-  addMasterMsg("I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?", 'rizz');
-  masterHistory.push({role:'assistant',content:"I'm looking forward to diving deeper on this with you. I just need a quick email confirmation to secure your account. What address should I use?"});
-  // 2. Switch input to capture email
   awaitEmailForAuth = true;
   const inp = document.getElementById('main-input');
-  inp.placeholder = 'Enter your email address...';
+  inp.placeholder = 'Enter your email...';
   inp.focus();
 }
 
@@ -1052,6 +1070,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 
       // 3. Now continue with history loaded
       console.log('masterHistory at continuation:', JSON.stringify(masterHistory));
+      // Show a focused welcome-back message and skip automatic API continuation
+      addMasterMsg("You're verified and good to go, Joseph. There's a live call happening today with the rest of the test cohort — that's the best next move. Want me to pull up the details?", 'rizz');
+
+      // If the continuation API is used elsewhere, ensure we parse JSON replies safely
+      // (left here for parity with other handlers)
+      /*
       try {
         showTyping();
         const res = await fetch('/api/chat?invite_id=joseph-onboarding', {
@@ -1061,13 +1085,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         const data = await res.json();
         document.getElementById('typing-ind')?.remove();
-        const reply = data.reply || data.content || data.message;
+        let reply = data.reply || data.content || data.message;
+        if (typeof reply === 'string' && reply.trim().startsWith('{')) {
+          try { reply = JSON.parse(reply).content; } catch(e) {}
+        }
         if (reply) addMasterMsg(reply, 'rizz');
       } catch (e) {
         console.error('chat continuation error:', e);
         document.getElementById('typing-ind')?.remove();
       }
+      */
     }, 800);
+  } else {
+    // Normal first load — fire Rizz initial greeting
+    sendInitialGreeting();
   }
 });
 
