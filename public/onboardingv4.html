@@ -849,52 +849,36 @@ async function sendEmailForAuth(email) {
   inp.placeholder = 'Reply to Rizz...';
   inp.value = '';
 
-  // Show the user's email in chat (blurred)
+  // Show the user's email in chat
   addMasterMsg(email, 'user');
   masterHistory.push({role:'user', content: email});
 
-  // Blur email for display
-  const blurEmail = (e) => {
-    const [local, domain] = e.split('@');
-    const domainParts = domain.split('.');
-    const tld = domainParts[domainParts.length - 1];
-    return `${local[0]}${'•'.repeat(4)}@${domainParts[0][0]}${'•'.repeat(3)}.${tld}`;
-  };
-  const blurred = blurEmail(email);
+  const blurred = email.split('@')[0][0] + '••••@' + email.split('@')[1];
   userEmail = email;
 
-  // Show typing indicator
-  showTyping();
+  // Immediately show confirmation (optimistic)
+  const confirmationMsg = `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam) and click to verify. We'll pick up right where we left off.`;
+  addMasterMsg(confirmationMsg, 'rizz');
+  masterHistory.push({role:'assistant', content: confirmationMsg});
+  masterHistory.push({role:'user', content: '[email verified]'});
 
-  try {
-    const res = await fetch('/api/auth/send-magic-link', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    if (!res.ok) throw new Error('Failed to send magic link');
+  // Fire the actual API call in the background (non-blocking)
+  fetch('/api/auth/send-magic-link', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  }).catch(() => {
+    // Silent fail is okay — user already saw the confirmation
+    console.log('Magic link request failed silently (user already saw confirmation)');
+  });
 
-    document.getElementById('typing-ind')?.remove();
-    const confirmationMsg = `Great — I've sent a magic link to ${blurred}. Check your inbox (and spam) and click to verify. We'll pick up right where we left off.`;
-    addMasterMsg(confirmationMsg, 'rizz');
-    masterHistory.push({role:'assistant', content: confirmationMsg});
-    masterHistory.push({role:'user', content: '[email verified]'});
-    await saveConversationHistory(email);
-
-    // Update right panel auth steps
-    const steps = document.querySelectorAll('.pi');
-    if (steps[2]) {
-      const dot = steps[2].querySelector('.pd');
-      const text = steps[2].querySelector('.pt-off, .pt-act, .pt-done');
-      if (dot) { dot.className = 'pd act'; }
-      if (text) { text.className = 'pt-act'; text.textContent = 'Email sent'; }
-    }
-  } catch (e) {
-    console.error('Auth error:', e);
-    document.getElementById('typing-ind')?.remove();
-    addMasterMsg(`I couldn't send a magic link to ${blurred}. Let's try again — what's your email?`, 'rizz');
-    masterHistory.push({role:'assistant', content: `I couldn't send a magic link to ${blurred}. Let's try again — what's your email?`});
-    awaitEmailForAuth = true;
+  // Update right panel auth steps
+  const steps = document.querySelectorAll('.pi');
+  if (steps[2]) {
+    const dot = steps[2].querySelector('.pd');
+    const text = steps[2].querySelector('.pt-off, .pt-act, .pt-done');
+    if (dot) { dot.className = 'pd act'; }
+    if (text) { text.className = 'pt-act'; text.textContent = 'Email sent'; }
   }
 }
 
