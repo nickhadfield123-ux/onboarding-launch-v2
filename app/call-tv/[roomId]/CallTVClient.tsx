@@ -79,116 +79,87 @@ function CallInner({ roomId, onCallEnded }: Props) {
 
   const audioEls = React.useRef<Map<string, HTMLAudioElement>>(new Map())
 
-  function initDailyEvents(co: any) {
-    // Future events to add here: recording-started, recording-stopped,
-    // transcription-started, app-message, live-stream-started
-
-    co.on('track-started', (e: any) => {
-      const p = e.participant
-      if (!p.local && e.track.kind === 'audio') {
-        if (!audioEls.current.has(p.session_id)) {
-          const audio = document.createElement('audio')
-          audio.autoplay = true
-          audio.srcObject = new MediaStream([e.track])
-          document.body.appendChild(audio)
-          audioEls.current.set(p.session_id, audio)
-        }
-      }
-      if (e.track.type === 'screenVideo') {
-        const tile = document.getElementById('screen-share-tile') as HTMLVideoElement | null
-        if (tile) {
-          tile.srcObject = new MediaStream([e.track.track])
-          tile.play().catch(() => {})
-          tile.style.display = 'block'
-        }
-      }
-    })
-
-    co.on('track-stopped', (e: any) => {
-      if (e.track.type === 'screenVideo') {
-        const tile = document.getElementById('screen-share-tile') as HTMLVideoElement | null
-        if (tile) {
-          tile.srcObject = null
-          tile.style.display = 'none'
-        }
-      }
-    })
-
-    co.on('participant-left', (e: any) => {
-      const audio = audioEls.current.get(e.participant.session_id)
-      if (audio) {
-        audio.pause()
-        audio.srcObject = null
-        audio.remove()
-        audioEls.current.delete(e.participant.session_id)
-      }
-    })
-
-    co.on('joined-meeting', (e: any) => {
-      console.log('✅ JOINED MEETING EVENT', e)
-      setIsJoined(true)
-      setIsJoining(false)
-      setError(null)
-    })
-
-    co.on('left-meeting', (e: any) => {
-      console.log('👋 Left meeting:', e)
-      setIsJoined(false)
-      if (onCallEnded) {
-        onCallEnded(finalDuration.current, finalParticipantCount.current)
-      }
-    })
-
-    co.on('error', (e: any) => {
-      console.log('❌ ERROR EVENT', e)
-      setError(e.errorMsg)
-    })
-
-    co.on('local-screen-share-started', (ev: any) => {
-      console.log('✅ Local screen share started:', ev)
-      setIsLocalSharing(true)
-      setSharingParticipantName('You')
-    })
-
-    co.on('local-screen-share-stopped', (ev: any) => {
-      console.log('👋 Local screen share stopped:', ev)
-      setIsLocalSharing(false)
-      setSharingParticipantName(null)
-      setScreenShareTrack(null)
-    })
-
-    co.on('participant-updated', (ev: any) => {
-      const participant = ev.participant
-      if (participant.screen) {
-        const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
-        setSharingParticipantName(name)
-        if (participant.tracks?.screen?.track) {
-          setScreenShareTrack(participant.tracks.screen.track)
-        }
-      } else if (participant.local && !participant.screen) {
-        setSharingParticipantName(null)
-        setScreenShareTrack(null)
-      }
-    })
-  }
-
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
     const url = `https://resourceful.daily.co/${roomId}`
     console.log('🚀 Joining:', url)
     setIsJoining(true)
+
     callObject.join({ url, userName: 'User', audioSource: true, videoSource: true })
       .then(() => {
         console.log('✅ JOINED!')
         setIsJoined(true)
         setIsJoining(false)
-        initDailyEvents(callObject)
       })
       .catch(err => {
         console.error('❌ Failed:', err)
         setIsJoining(false)
       })
+
+    // === Remote audio + screen share tile handlers ===
+    const handleTrackStarted = (e: any) => {
+      const p = e.participant
+
+      // Remote audio
+      if (!p.local && e.track.kind === 'audio') {
+        const sid = p.session_id
+        if (audioEls.current.has(sid)) return
+        const el = document.createElement('audio')
+        el.autoplay = true
+        el.srcObject = new MediaStream([e.track])
+        document.body.appendChild(el)
+        audioEls.current.set(sid, el)
+      }
+
+      // Screen share
+      if (e.track.type === 'screenVideo') {
+        const el = document.getElementById('screen-share-tile') as HTMLVideoElement | null
+        if (el) {
+          el.srcObject = new MediaStream([e.track.track])
+          el.style.display = 'block'
+          el.play().catch(() => {})
+        }
+      }
+    }
+
+    const handleTrackStopped = (e: any) => {
+      if (e.track.type === 'screenVideo') {
+        const el = document.getElementById('screen-share-tile') as HTMLVideoElement | null
+        if (el) {
+          el.srcObject = null
+          el.style.display = 'none'
+        }
+      }
+    }
+
+    const handleParticipantLeft = (e: any) => {
+      const el = audioEls.current.get(e.participant.session_id)
+      if (el) {
+        el.pause()
+        el.srcObject = null
+        el.remove()
+        audioEls.current.delete(e.participant.session_id)
+      }
+    }
+
+    callObject.on('track-started', handleTrackStarted)
+    callObject.on('track-stopped', handleTrackStopped)
+    callObject.on('participant-left', handleParticipantLeft)
+
+    return () => {
+      callObject.off('track-started', handleTrackStarted)
+      callObject.off('track-stopped', handleTrackStopped)
+      callObject.off('participant-left', handleParticipantLeft)
+
+      // Cleanup any remaining audio elements
+      audioEls.current.forEach((el) => {
+        el.pause()
+        el.srcObject = null
+        el.remove()
+      })
+      audioEls.current.clear()
+    }
   }, [callObject, roomId])
 
   // Call duration timer
@@ -336,10 +307,9 @@ function CallInner({ roomId, onCallEnded }: Props) {
           {/* Dedicated Screen Share Tile (hidden by default) */}
           <video
             id="screen-share-tile"
-            className="w-full h-auto object-contain mb-3"
-            style={{ display: 'none' }}
             autoPlay
             playsInline
+            style={{ display: 'none', width: '100%', borderRadius: '12px', marginBottom: '12px' }}
           />
 
           {/* Multi-Participant Grid Layout */}
