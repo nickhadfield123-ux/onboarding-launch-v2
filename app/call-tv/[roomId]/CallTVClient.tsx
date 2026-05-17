@@ -67,6 +67,12 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
   const [duration, setDuration] = React.useState(0)
   const durationRef = React.useRef<NodeJS.Timeout | null>(null)
 
+  // Mic volume meter
+  const [volume, setVolume] = React.useState(0)
+  const rafRef = React.useRef<number | null>(null)
+  const audioContextRef = React.useRef<AudioContext | null>(null)
+  const micStreamRef = React.useRef<MediaStream | null>(null)
+
   // Screen sharing state
   const [screenShareTrack, setScreenShareTrack] = React.useState<MediaStreamTrack | null>(null)
   const [isLocalSharing, setIsLocalSharing] = React.useState(false)
@@ -83,6 +89,51 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
 
   const audioEls = React.useRef<Map<string, HTMLAudioElement>>(new Map())
 
+  // Cleanup volume meter on unmount / leave
+  React.useEffect(() => {
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current)
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close()
+      }
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop())
+      }
+      setVolume(0)
+    }
+  }, [])
+
+  const startMicVolumeMeter = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      micStreamRef.current = stream
+
+      const audioContext = new AudioContext()
+      audioContextRef.current = audioContext
+
+      const source = audioContext.createMediaStreamSource(stream)
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 256
+      source.connect(analyser)
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount)
+
+      const tick = () => {
+        analyser.getByteFrequencyData(dataArray)
+        const max = dataArray.reduce((a, b) => Math.max(a, b), 0)
+        const vol = max / 255
+        setVolume(vol)
+        rafRef.current = requestAnimationFrame(tick)
+      }
+
+      rafRef.current = requestAnimationFrame(tick)
+    } catch (err) {
+      console.warn('Could not start mic volume meter:', err)
+    }
+  }
+
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
@@ -95,6 +146,9 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
         console.log('✅ JOINED!')
         setIsJoined(true)
         setIsJoining(false)
+
+        // Start local mic volume meter
+        startMicVolumeMeter()
       })
       .catch(err => {
         console.error('❌ Failed:', err)
@@ -349,14 +403,27 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
         {isJoined && (
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 rounded-full p-2">
             <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMicrophone}
-                className="text-white hover:text-white hover:bg-white/20"
-              >
-                <Mic className="h-5 w-5" />
-              </Button>
+              <div className="flex flex-col items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={toggleMicrophone}
+                  className="text-white hover:text-white hover:bg-white/20"
+                >
+                  <Mic className="h-5 w-5" />
+                </Button>
+                {/* Local mic volume meter */}
+                <div className="mt-0.5 w-8 h-1 bg-slate-700 rounded overflow-hidden">
+                  <div
+                    style={{
+                      width: `${volume * 100}%`,
+                      height: '100%',
+                      backgroundColor: volume > 0.7 ? '#ef4444' : '#22c55e',
+                      transition: 'width 50ms linear'
+                    }}
+                  />
+                </div>
+              </div>
 
               <Button
                 variant="ghost"
