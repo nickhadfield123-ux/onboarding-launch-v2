@@ -29,6 +29,13 @@ export default function RoomV2Page() {
       setLeftSidebarExpanded(false)
     }
   }, [callHasStarted, callHasEnded])
+
+  // Stabilize leftSidebar prop to prevent unnecessary re-renders in PlatformFrame
+  const leftSidebar = React.useMemo(() => ({
+    content: <div className="p-6"><h3 className="font-semibold mb-4">Participants</h3><p className="text-sm text-gray-500">Call controls will appear here</p></div>,
+    expanded: leftSidebarExpanded,
+    onToggle: () => setLeftSidebarExpanded(prev => !prev)
+  }), [leftSidebarExpanded])
   
   const mockMeeting: Meeting = {
     id: roomId,
@@ -75,11 +82,7 @@ export default function RoomV2Page() {
 
   return (
     <PlatformFrame
-      leftSidebar={{
-        content: <div className="p-6"><h3 className="font-semibold mb-4">Participants</h3><p className="text-sm text-gray-500">Call controls will appear here</p></div>,
-        expanded: leftSidebarExpanded,
-        onToggle: () => setLeftSidebarExpanded(prev => !prev)
-      }}
+      leftSidebar={leftSidebar}
       rightSidebar={{
         content: <RizzPanel />,
         defaultExpanded: true
