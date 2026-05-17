@@ -55,6 +55,11 @@ export default function RoomV2Page() {
     console.log('   ✅ CallTVClient SHOULD NOW BE MOUNTED')
   }
 
+  const handleCallEnded = React.useCallback((duration: number, participantCount: number) => {
+    setCallDuration(duration)
+    setCallHasEnded(true)
+  }, [])
+
   const handleInviteUsers = (userIds: string[]) => {
     console.log('Invite users:', userIds)
   }
@@ -108,10 +113,7 @@ export default function RoomV2Page() {
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
           <CallTVClient 
             roomId={roomId}
-            onCallEnded={(duration, participantCount) => {
-              setCallDuration(duration)
-              setCallHasEnded(true)
-            }}
+            onCallEnded={handleCallEnded}
           />
         </>
       )}
