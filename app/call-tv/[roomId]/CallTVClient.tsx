@@ -70,17 +70,113 @@ function CallInner({ roomId, onCallEnded }: Props) {
     ? [localSessionId, ...participantIds]
     : participantIds
 
+  const audioEls = React.useRef<Map<string, HTMLAudioElement>>(new Map())
+
+  function initDailyEvents(co: any) {
+    // Future events to add here: recording-started, recording-stopped,
+    // transcription-started, app-message, live-stream-started
+
+    co.on('track-started', (e: any) => {
+      const p = e.participant
+      if (!p.local && e.track.kind === 'audio') {
+        if (!audioEls.current.has(p.session_id)) {
+          const audio = document.createElement('audio')
+          audio.autoplay = true
+          audio.srcObject = new MediaStream([e.track])
+          document.body.appendChild(audio)
+          audioEls.current.set(p.session_id, audio)
+        }
+      }
+      if (e.track.type === 'screenVideo') {
+        const tile = document.getElementById('screen-share-tile') as HTMLVideoElement | null
+        if (tile) {
+          tile.srcObject = new MediaStream([e.track.track])
+          tile.play().catch(() => {})
+          tile.style.display = 'block'
+        }
+      }
+    })
+
+    co.on('track-stopped', (e: any) => {
+      if (e.track.type === 'screenVideo') {
+        const tile = document.getElementById('screen-share-tile') as HTMLVideoElement | null
+        if (tile) {
+          tile.srcObject = null
+          tile.style.display = 'none'
+        }
+      }
+    })
+
+    co.on('participant-left', (e: any) => {
+      const audio = audioEls.current.get(e.participant.session_id)
+      if (audio) {
+        audio.pause()
+        audio.srcObject = null
+        audio.remove()
+        audioEls.current.delete(e.participant.session_id)
+      }
+    })
+
+    co.on('joined-meeting', (e: any) => {
+      console.log('✅ JOINED MEETING EVENT', e)
+      setIsJoined(true)
+      setIsJoining(false)
+      setError(null)
+    })
+
+    co.on('left-meeting', (e: any) => {
+      console.log('👋 Left meeting:', e)
+      setIsJoined(false)
+      if (onCallEnded) {
+        onCallEnded(finalDuration.current, finalParticipantCount.current)
+      }
+    })
+
+    co.on('error', (e: any) => {
+      console.log('❌ ERROR EVENT', e)
+      setError(e.errorMsg)
+    })
+
+    co.on('local-screen-share-started', (ev: any) => {
+      console.log('✅ Local screen share started:', ev)
+      setIsLocalSharing(true)
+      setSharingParticipantName('You')
+    })
+
+    co.on('local-screen-share-stopped', (ev: any) => {
+      console.log('👋 Local screen share stopped:', ev)
+      setIsLocalSharing(false)
+      setSharingParticipantName(null)
+      setScreenShareTrack(null)
+    })
+
+    co.on('participant-updated', (ev: any) => {
+      const participant = ev.participant
+      if (participant.screen) {
+        const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
+        setSharingParticipantName(name)
+        if (participant.tracks?.screen?.track) {
+          setScreenShareTrack(participant.tracks.screen.track)
+        }
+      } else if (participant.local && !participant.screen) {
+        setSharingParticipantName(null)
+        setScreenShareTrack(null)
+      }
+    })
+  }
+
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
     const url = `https://resourceful.daily.co/${roomId}`
     console.log('🚀 Joining:', url)
     setIsJoining(true)
-    callObject.join({ url, userName: 'User' })
+    callObject.join({ url, userName: 'User', audioSource: true, videoSource: true })
       .then(() => {
         console.log('✅ JOINED!')
         setIsJoined(true)
         setIsJoining(false)
+        initDailyEvents(callObject)
       })
       .catch(err => {
         console.error('❌ Failed:', err)
@@ -159,35 +255,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
     }
   }, [isJoined, duration, allIds.length])
 
-  // Screen sharing events
-  useDailyEvent('local-screen-share-started', useCallback((ev) => {
-    console.log('✅ Local screen share started:', ev)
-    setIsLocalSharing(true)
-    setSharingParticipantName('You')
-  }, []))
-
-  useDailyEvent('local-screen-share-stopped', useCallback((ev) => {
-    console.log('👋 Local screen share stopped:', ev)
-    setIsLocalSharing(false)
-    setSharingParticipantName(null)
-    setScreenShareTrack(null)
-  }, []))
-
-  useDailyEvent('participant-updated', useCallback((ev) => {
-    const participant = ev.participant
-    if (participant.screen) {
-      const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
-      setSharingParticipantName(name)
-      if (participant.tracks?.screen?.track) {
-        setScreenShareTrack(participant.tracks.screen.track)
-      }
-    } else if (participant.local && !participant.screen) {
-      setSharingParticipantName(null)
-      setScreenShareTrack(null)
-    }
-  }, []))
-
-  // Attach screen share track
+  // Attach screen share track (kept for backward compatibility with existing UI)
   React.useEffect(() => {
     if (screenShareVideoRef.current && screenShareTrack) {
       const stream = new MediaStream([screenShareTrack])
@@ -199,26 +267,6 @@ function CallInner({ roomId, onCallEnded }: Props) {
       screenShareVideoRef.current.srcObject = null
     }
   }, [screenShareTrack])
-
-  useDailyEvent('joined-meeting', useCallback((e) => {
-    console.log('✅ JOINED MEETING EVENT', e)
-    setIsJoined(true)
-    setIsJoining(false)
-    setError(null)
-  }, []))
-
-  useDailyEvent('left-meeting', useCallback((e) => {
-    console.log('👋 Left meeting:', e)
-    setIsJoined(false)
-    if (onCallEnded) {
-      onCallEnded(finalDuration.current, finalParticipantCount.current)
-    }
-  }, [onCallEnded]))
-
-  useDailyEvent('error', useCallback((e) => {
-    console.log('❌ ERROR EVENT', e)
-    setError(e.errorMsg)
-  }, []))
 
   return (
     <div className="h-full bg-slate-900">
@@ -277,6 +325,15 @@ function CallInner({ roomId, onCallEnded }: Props) {
               )}
             </div>
           )}
+
+          {/* Dedicated Screen Share Tile (hidden by default) */}
+          <video
+            id="screen-share-tile"
+            className="w-full h-auto object-contain mb-3"
+            style={{ display: 'none' }}
+            autoPlay
+            playsInline
+          />
 
           {/* Multi-Participant Grid Layout */}
           {isJoined && !screenShareTrack && (
