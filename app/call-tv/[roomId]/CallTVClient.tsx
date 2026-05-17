@@ -4,6 +4,8 @@
 // @ts-ignore
 globalThis.__webpack_disable_ses_lockdown = true;
 
+
+
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId } from "@daily-co/daily-react"
@@ -35,22 +37,24 @@ interface Props {
   onCallEnded?: (duration: number, participantCount: number) => void
 }
 
-export default function CallTVClient({ roomId, onCallEnded }: Props) {
-  console.log('🏗️ CallTVClient outer rendering')
-
+const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: Props) {
   const callObjectRef = React.useRef<any>(null)
   if (!callObjectRef.current) {
     callObjectRef.current = DailyIframe.createCallObject()
   }
 
+  const stableCallObject = React.useMemo(() => callObjectRef.current, [])
+
   return (
-    <DailyProvider callObject={callObjectRef.current}>
+    <DailyProvider callObject={stableCallObject}>
       <CallInner roomId={roomId} onCallEnded={onCallEnded} />
     </DailyProvider>
   )
-}
+})
 
-function CallInner({ roomId, onCallEnded }: Props) {
+export default CallTVClient
+
+const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) {
   console.log('🔵 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
@@ -391,4 +395,4 @@ function CallInner({ roomId, onCallEnded }: Props) {
       </main>
     </div>
   )
-}
+})
