@@ -128,16 +128,33 @@ export function PreCallPage({
   return (
     <div className="space-y-6 text-white">
       {/* Meeting Header */}
-      <div className=\"flex items-center justify-between items-stretch\">\n        <div className="flex gap-2">\n          <Button\n            variant="outline"\n            size="default"\n            onClick={() => {\n              const hubUrl = getHubUrl()\n              window.location.href = hubUrl\n            }}\n          >\n            <Home className="h-4 w-4" />\n            Return to Hub\n          </Button>\n        </div>
+      <div className="flex items-center justify-between">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="default"
+            onClick={() => {
+              const hubUrl = getHubUrl()
+              window.location.href = hubUrl
+            }}
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700 min-w-[140px]"
+          >
+            <Home className="h-4 w-4" />
+            Return to Hub
+          </Button>
+        </div>
+
         <div className="flex-1 space-y-2 mx-6">
           <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
           {meeting.description && (
             <p className="text-muted-foreground">{meeting.description}</p>
           )}
         </div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
+            size="default"
             onClick={() => {
               console.log('🎯 Invite People button clicked!')
               console.log('📋 onInviteUsers function:', onInviteUsers)
@@ -150,24 +167,21 @@ export function PreCallPage({
             <UserPlus className="h-4 w-4" />
             Invite People
           </Button>
+
           <button
             onClick={() => onJoinCall()}
-            className="inline-flex items-center gap-2 bg-blue-600 
-              hover:bg-blue-700 active:bg-blue-800 text-white 
-              font-semibold px-6 py-2.5 rounded-lg transition-colors 
-              duration-150 text-sm shadow-sm h-10"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors duration-150 text-sm shadow-sm h-10"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" 
-              height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5,3 19,12 5,21"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5,3 19,12 5,21" />
             </svg>
             Join Call
           </button>
+
           <Button
             variant="secondary"
             onClick={() => {
               console.log('🎯 Cancel button clicked!')
-              // Navigate to user's hub
               const hubUrl = getHubUrl()
               window.location.href = hubUrl
             }}

@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function getSupabaseClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Missing Supabase environment variables');
+  }
+  return createClient(url, key);
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -14,6 +18,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Token or invite_id required' }, { status: 400 });
   }
 
+  const supabase = getSupabaseClient();
   const { data: invite, error: inviteError } = await supabase
     .from('platform_invites')
     .select('name, rizz_context')

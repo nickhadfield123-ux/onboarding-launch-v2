@@ -1,12 +1,19 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    throw new Error('Missing RESEND_API_KEY environment variable');
+  }
+  return new Resend(apiKey);
+}
 
 export async function POST(req: Request) {
   const { email } = await req.json();
   
   if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
 
+  const resend = getResendClient();
   const magicLink = `https://onboarding-launch-v2.vercel.app/onboardingv4.html?verified=true&email=${encodeURIComponent(email)}`;
 
   const { error } = await resend.emails.send({
