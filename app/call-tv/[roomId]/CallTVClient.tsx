@@ -45,24 +45,8 @@ function getCallObject() {
   return _callObject
 }
 
-const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: Props) {
-  const co = getCallObject()
-  // Capture roomId in a ref so CallInner never sees it as a changing prop
-  const roomIdRef = React.useRef(roomId)
-  roomIdRef.current = roomId
-
-  return (
-    <DailyProvider callObject={co}>
-      <CallInner onCallEnded={onCallEnded} />
-    </DailyProvider>
-  )
-})
-
-export default CallTVClient
-
-// CallInner at module scope — receives NO props that can change (only onCallEnded
-// which is useCallback-stabilized). roomId is read from a ref in the parent.
-const CallInner = React.memo(function CallInner({ onCallEnded }: { onCallEnded?: Props['onCallEnded'] }) {
+// ✅ CORRECT — CallInner at module scope, outside everything
+function CallInner({ roomUrl, onCallEnded }: { roomUrl: string; onCallEnded?: Props['onCallEnded'] }) {
   console.log('CallInner render #' + (++_renderCount))
   console.log('🔵 CallInner IS MOUNTING')
 
@@ -150,9 +134,7 @@ const CallInner = React.memo(function CallInner({ onCallEnded }: { onCallEnded?:
     if (!callObject || hasJoined.current || joined.current) return
     hasJoined.current = true
     joined.current = true
-    // Read roomId from the URL via the parent's path — this roomUrl
-    // will be set to the actual Daily room. For now use the fixed room.
-    const url = `https://resourceful.daily.co/meeting-temp-1-fixed`
+    const url = roomUrl
     console.log('🚀 Joining:', url)
     setIsJoining(true)
 
@@ -478,4 +460,16 @@ const CallInner = React.memo(function CallInner({ onCallEnded }: { onCallEnded?:
       </main>
     </div>
   )
-})
+}
+
+// ✅ CORRECT — CallTVClient just renders it
+export default function CallTVClient({ roomId, onCallEnded }: Props) {
+  const co = getCallObject()
+  const roomUrl = `https://resourceful.daily.co/meeting-temp-1-fixed`
+
+  return (
+    <DailyProvider callObject={co}>
+      <CallInner roomUrl={roomUrl} onCallEnded={onCallEnded} />
+    </DailyProvider>
+  )
+}
