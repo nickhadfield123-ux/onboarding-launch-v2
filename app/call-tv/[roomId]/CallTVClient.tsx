@@ -4,7 +4,14 @@
 // @ts-ignore
 globalThis.__webpack_disable_ses_lockdown = true;
 
-
+// Render counter to distinguish re-renders from remounts
+let _renderCount = 0;
+// Module-scoped callObject singleton — React literally cannot recreate this
+let _callObject: any = null;
+function getCallObject() {
+  if (!_callObject) _callObject = DailyIframe.createCallObject();
+  return _callObject;
+}
 
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
@@ -38,15 +45,10 @@ interface Props {
 }
 
 const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: Props) {
-  const callObjectRef = React.useRef<any>(null)
-  if (!callObjectRef.current) {
-    callObjectRef.current = DailyIframe.createCallObject()
-  }
-
-  const stableCallObject = React.useMemo(() => callObjectRef.current, [])
+  const co = getCallObject()
 
   return (
-    <DailyProvider callObject={stableCallObject}>
+    <DailyProvider callObject={co}>
       <CallInner roomId={roomId} onCallEnded={onCallEnded} />
     </DailyProvider>
   )
@@ -55,10 +57,12 @@ const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: P
 export default CallTVClient
 
 const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) {
+  console.log('CallInner render #' + (++_renderCount))
   console.log('🔵 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
   const hasJoined = React.useRef(false)
+  const joined = React.useRef(false)
 
   const [isJoined, setIsJoined] = React.useState(false)
   const [isJoining, setIsJoining] = React.useState(false)
@@ -135,8 +139,9 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
   }
 
   React.useEffect(() => {
-    if (!callObject || hasJoined.current) return
+    if (!callObject || hasJoined.current || joined.current) return
     hasJoined.current = true
+    joined.current = true
     const url = `https://resourceful.daily.co/${roomId}`
     console.log('🚀 Joining:', url)
     setIsJoining(true)
@@ -218,7 +223,7 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
       })
       audioEls.current.clear()
     }
-  }, [callObject, roomId])
+  }, [])
 
   // Call duration timer
   React.useEffect(() => {
