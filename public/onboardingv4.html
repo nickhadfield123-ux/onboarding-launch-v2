@@ -526,7 +526,7 @@ let userEmail = '';
 
 // The video call room to join — all call "Join" buttons navigate here
 const CALL_ROOM = 'meeting-temp-1';
-const CALL_URL = `/v2/room/${CALL_ROOM}?returnTo=/onboardingv4.html`;
+const CALL_URL = `https://onboarding-launch-v2.vercel.app/v2/room/meeting-temp-1-fixed`;
 
 // ── SECTION DEFINITIONS ────────────────────────────────────────────────────
 const SECTIONS = {
@@ -1064,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', async function() {
           if (chip.textContent.includes("see details of today's call")) {
             chip.onclick = () => {
               addMasterMsg(
-                `Here's today's call with Nick:\n\n📅 ${TODAYS_CALL_TIME}\n\nClick below to join the call:`,
+                `Here's today's call with Nick:\n\n📅 ${TODAYS_CALL_TIME}\n\nClick the link below to join — see you in there 👋\n\nhttps://onboarding-launch-v2.vercel.app/v2/room/meeting-temp-1-fixed`,
                 'rizz',
                 ['Join the call']
               );

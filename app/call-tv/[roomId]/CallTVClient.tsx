@@ -16,7 +16,7 @@ function getCallObject() {
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId } from "@daily-co/daily-react"
-import { useMemo, useCallback } from "react"
+import { useCallback } from "react"
 import {
   ArrowLeft,
   Mic,
