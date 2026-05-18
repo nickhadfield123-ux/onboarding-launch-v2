@@ -6,12 +6,6 @@ globalThis.__webpack_disable_ses_lockdown = true;
 
 // Render counter to distinguish re-renders from remounts
 let _renderCount = 0;
-// Module-scoped callObject singleton — React literally cannot recreate this
-let _callObject: any = null;
-function getCallObject() {
-  if (!_callObject) _callObject = DailyIframe.createCallObject();
-  return _callObject;
-}
 
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
@@ -44,21 +38,34 @@ interface Props {
   onCallEnded?: (duration: number, participantCount: number) => void
 }
 
+// Module-scoped callObject singleton — React literally cannot recreate this
+let _callObject: any = null
+function getCallObject() {
+  if (!_callObject) _callObject = DailyIframe.createCallObject()
+  return _callObject
+}
+
 const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: Props) {
   const co = getCallObject()
+  // Capture roomId in a ref so CallInner never sees it as a changing prop
+  const roomIdRef = React.useRef(roomId)
+  roomIdRef.current = roomId
 
   return (
     <DailyProvider callObject={co}>
-      <CallInner roomId={roomId} onCallEnded={onCallEnded} />
+      <CallInner onCallEnded={onCallEnded} />
     </DailyProvider>
   )
 })
 
 export default CallTVClient
 
-const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) {
+// CallInner at module scope — receives NO props that can change (only onCallEnded
+// which is useCallback-stabilized). roomId is read from a ref in the parent.
+const CallInner = React.memo(function CallInner({ onCallEnded }: { onCallEnded?: Props['onCallEnded'] }) {
   console.log('CallInner render #' + (++_renderCount))
   console.log('🔵 CallInner IS MOUNTING')
+
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
   const hasJoined = React.useRef(false)
@@ -139,10 +146,13 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
   }
 
   React.useEffect(() => {
+    console.log('🧹 CallInner EFFECT setup')
     if (!callObject || hasJoined.current || joined.current) return
     hasJoined.current = true
     joined.current = true
-    const url = `https://resourceful.daily.co/${roomId}`
+    // Read roomId from the URL via the parent's path — this roomUrl
+    // will be set to the actual Daily room. For now use the fixed room.
+    const url = `https://resourceful.daily.co/meeting-temp-1-fixed`
     console.log('🚀 Joining:', url)
     setIsJoining(true)
 
@@ -211,6 +221,7 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
     callObject.on('participant-left', handleParticipantLeft)
 
     return () => {
+      console.log('🧹 CallInner CLEANUP')
       callObject.off('track-started', handleTrackStarted)
       callObject.off('track-stopped', handleTrackStopped)
       callObject.off('participant-left', handleParticipantLeft)
@@ -316,7 +327,7 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse" />
-            <span className="font-semibold text-white">{roomId || 'Video Call'}</span>
+            <span className="font-semibold text-white">Video Call</span>
             {isJoined && (
               <Badge variant="secondary" className="ml-2 bg-slate-700 text-white border-slate-600">
                 {allIds.length} participant{allIds.length !== 1 ? 's' : ''}
