@@ -7,6 +7,7 @@ import { RizzPanel } from '@/components/shell'
 import { PreCallPage } from "@/components/cockpit/PreCallPage"
 import { PostCallPage } from "@/components/cockpit/PostCallPage"
 import CallTVClient from "../../../call-tv/[roomId]/CallTVClient"
+const MemoCallTV = React.memo(CallTVClient)
 import { Meeting } from "@/lib/meetings/types"
 import { getHubUrl } from "@/lib/utils"
 
@@ -118,7 +119,7 @@ export default function RoomV2Page() {
       ) : (
         <>
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
-          <CallTVClient 
+          <MemoCallTV 
             roomId={roomId}
             onCallEnded={handleCallEnded}
           />
