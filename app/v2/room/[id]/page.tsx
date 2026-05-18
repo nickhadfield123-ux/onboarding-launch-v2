@@ -11,6 +11,8 @@ import { Meeting } from "@/lib/meetings/types"
 import { getHubUrl } from "@/lib/utils"
 
 export default function RoomV2Page() {
+  const parentRenderCount = React.useRef(0)
+  console.log('RoomV2Page render #' + (++parentRenderCount.current))
   const params = useParams()
   const router = useRouter()
   const roomId = params.id as string
@@ -37,7 +39,7 @@ export default function RoomV2Page() {
     onToggle: () => setLeftSidebarExpanded(prev => !prev)
   }), [leftSidebarExpanded])
   
-  const mockMeeting: Meeting = {
+  const mockMeeting = React.useMemo<Meeting>(() => ({
     id: roomId,
     title: "Welcome to Resourceful",
     description: "This is your video call room",
@@ -52,7 +54,7 @@ export default function RoomV2Page() {
     visibility: "private",
     created_at: new Date(),
     updated_at: new Date()
-  }
+  }), [])
 
   const handleJoinCall = () => {
     console.log('✅ 🎯 JOIN CALL BUTTON CLICKED!')
@@ -80,13 +82,15 @@ export default function RoomV2Page() {
   console.log('🔄 RoomV2Page rendering | callHasStarted =', callHasStarted)
   console.log('   ➡️ Rendering:', callHasStarted ? 'CALLTVCLIENT' : 'PRECALLPAGE')
 
+  const rightSidebar = React.useMemo(() => ({
+    content: <RizzPanel />,
+    defaultExpanded: true
+  }), [])
+
   return (
     <PlatformFrame
       leftSidebar={leftSidebar}
-      rightSidebar={{
-        content: <RizzPanel />,
-        defaultExpanded: true
-      }}
+      rightSidebar={rightSidebar}
     >
       {callHasEnded ? (
         <div className="p-6 h-full overflow-auto bg-slate-900">
