@@ -125,6 +125,11 @@ export default function RoomV2Page() {
       ) : (
         <>
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
+          {console.log('MemoCallTV props check:', {
+            roomId,
+            onCallEnded: handleCallEnded.toString().slice(0, 50),
+            onCallEndedRef: handleCallEnded,
+          })}
           <MemoCallTV 
             roomId={roomId}
             onCallEnded={handleCallEnded}
