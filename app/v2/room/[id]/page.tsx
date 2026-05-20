@@ -27,10 +27,9 @@ export default function RoomV2Page() {
   // Reset sidebar expanded state when transitioning between states
   React.useEffect(() => {
     console.log('useEffect firing: sidebar state sync on callHasStarted/callHasEnded change')
-    const newValue = !callHasStarted || callHasEnded
-    if (leftSidebarExpanded === newValue) return
-    setLeftSidebarExpanded(newValue)
-  }, [callHasStarted, callHasEnded, leftSidebarExpanded])
+    const next = !callHasStarted || callHasEnded
+    setLeftSidebarExpanded(prev => prev === next ? prev : next)
+  }, [callHasStarted, callHasEnded])
 
   // Stabilize leftSidebar prop to prevent unnecessary re-renders in PlatformFrame
   const leftSidebar = React.useMemo(() => ({
