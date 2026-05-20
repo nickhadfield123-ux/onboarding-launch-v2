@@ -361,12 +361,38 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
               <div className={hasScreenShare ? 'h-20 shrink-0' : 'flex-1 min-h-0'}>
                 {hasScreenShare ? (
                   /* Horizontal scroll strip for participants during screen share */
-                  <div className="flex gap-2 overflow-x-auto h-full items-center pb-1">
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    gap: '8px',
+                    padding: '8px',
+                    overflowX: 'auto',
+                    height: '100%',
+                    alignItems: 'center',
+                  }}>
                     {allIds.map(id => (
-                      <div key={id} className="w-24 h-full shrink-0 rounded-md overflow-hidden bg-slate-800">
-                        <ParticipantTile
+                      <div key={id} style={{
+                        position: 'relative',
+                        width: '120px',
+                        height: '90px',
+                        flexShrink: 0,
+                        borderRadius: '8px',
+                        overflow: 'hidden',
+                        backgroundColor: '#000',
+                      }}>
+                        <DailyVideo
                           sessionId={id}
-                          isLocal={id === localSessionId}
+                          automirror
+                          type="video"
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                          }}
                         />
                       </div>
                     ))}
