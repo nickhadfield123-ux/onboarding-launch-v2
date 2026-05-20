@@ -26,7 +26,7 @@ export default function RoomV2Page() {
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
   const [rizzEnabled, setRizzEnabled] = React.useState(true)
 
-  const toggleRizz = async (next: boolean) => {
+  const toggleRizz = React.useCallback(async (next: boolean) => {
     const roomUrl = `https://resourceful.daily.co/${roomId}`
     setRizzEnabled(next)
     localStorage.setItem('rizzEnabled', next ? 'true' : 'false')
@@ -56,7 +56,7 @@ export default function RoomV2Page() {
         console.log('[Rizz] stop error (silent):', e)
       }
     }
-  }
+  }, [roomId])
    
   // Diagnostic: track each sidebar effect dep individually to identify the culprit
 
@@ -67,12 +67,16 @@ export default function RoomV2Page() {
     console.log('DEP CHANGED: callHasEnded =', callHasEnded);
   }, [callHasEnded]);
 
-  // Reset sidebar expanded state when transitioning between states
+  // Keep left sidebar (with Rizz toggle + tile) visible during pre-call and active call.
+  // Only collapse it after the call has ended.
   React.useEffect(() => {
     console.log('SIDEBAR EFFECT running, deps:', { callHasStarted, callHasEnded });
-    const next = !callHasStarted || callHasEnded
-    setLeftSidebarExpanded(prev => prev === next ? prev : next)
-  }, [callHasStarted, callHasEnded])
+    if (callHasEnded) {
+      setLeftSidebarExpanded(false)
+    } else {
+      setLeftSidebarExpanded(true)
+    }
+  }, [callHasEnded])
 
   // Load Rizz preference + start bot on mount (only if enabled)
   React.useEffect(() => {
