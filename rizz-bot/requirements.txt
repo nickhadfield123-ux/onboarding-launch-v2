@@ -1,0 +1,6 @@
+pipecat-ai[daily,openai,silero]
+groq
+mistralai
+supabase
+python-dotenv
+aiohttp

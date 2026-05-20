@@ -10,6 +10,7 @@ import { Meeting } from "@/lib/meetings/types"
 const MemoCallTV = dynamic(() => import("../../../call-tv/[roomId]/CallTVClient"), { ssr: false })
 const PreCallPage = dynamic(() => import("@/components/cockpit/PreCallPage").then(mod => mod.PreCallPage), { ssr: false })
 import { getHubUrl } from "@/lib/utils"
+import { RizzTile } from "@/components/RizzTile"
 
 export default function RoomV2Page() {
   const parentRenderCount = React.useRef(0)
@@ -23,8 +24,42 @@ export default function RoomV2Page() {
   const [callHasEnded, setCallHasEnded] = React.useState(false)
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
-  
+  const [rizzEnabled, setRizzEnabled] = React.useState(true)
+
+  const toggleRizz = async (next: boolean) => {
+    const roomUrl = `https://resourceful.daily.co/${roomId}`
+    setRizzEnabled(next)
+    localStorage.setItem('rizzEnabled', next ? 'true' : 'false')
+
+    if (next) {
+      // Turn ON → start bot
+      try {
+        await fetch('/api/rizz-bot/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomUrl }),
+        })
+        console.log('[Rizz] turned ON mid-call')
+      } catch (e) {
+        console.log('[Rizz] start error (silent):', e)
+      }
+    } else {
+      // Turn OFF → stop bot
+      try {
+        await fetch('/api/rizz-bot/stop', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomUrl }),
+        })
+        console.log('[Rizz] turned OFF mid-call')
+      } catch (e) {
+        console.log('[Rizz] stop error (silent):', e)
+      }
+    }
+  }
+   
   // Diagnostic: track each sidebar effect dep individually to identify the culprit
+
   React.useEffect(() => {
     console.log('DEP CHANGED: callHasStarted =', callHasStarted);
   }, [callHasStarted]);
@@ -39,12 +74,53 @@ export default function RoomV2Page() {
     setLeftSidebarExpanded(prev => prev === next ? prev : next)
   }, [callHasStarted, callHasEnded])
 
+  // Load Rizz preference + start bot on mount (only if enabled)
+  React.useEffect(() => {
+    const stored = localStorage.getItem('rizzEnabled')
+    const enabled = stored === null ? true : stored === 'true'
+    setRizzEnabled(enabled)
+
+    if (enabled) {
+      const roomUrl = `https://resourceful.daily.co/${roomId}`
+      fetch('/api/rizz-bot/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomUrl }),
+      })
+        .then(() => console.log('[Rizz] bot start requested for', roomUrl))
+        .catch((err) => console.log('[Rizz] bot start error (silent):', err))
+    }
+  }, []) // fire once on mount
+
   // Stabilize leftSidebar prop to prevent unnecessary re-renders in PlatformFrame
   const leftSidebar = React.useMemo(() => ({
-    content: <div className="p-6"><h3 className="font-semibold mb-4">Participants</h3><p className="text-sm text-gray-500">Call controls will appear here</p></div>,
+    content: (
+      <div className="p-6">
+        <h3 className="font-semibold mb-3">Participants</h3>
+
+        {/* Rizz toggle pill (small, in sidebar) */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-slate-700">Rizz</span>
+            <button
+              onClick={() => toggleRizz(!rizzEnabled)}
+              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rizzEnabled ? 'bg-[#534AB7]' : 'bg-gray-300'}`}
+            >
+              <span
+                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${rizzEnabled ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+              />
+            </button>
+          </div>
+          <div className="text-[10px] text-slate-500 mt-0.5">{rizzEnabled ? 'On — will join' : 'Off'}</div>
+        </div>
+
+        {/* Only show RizzTile when enabled */}
+        {rizzEnabled && <RizzTile isSpeaking={false} lastWords="Listening..." />}
+      </div>
+    ),
     expanded: leftSidebarExpanded,
     onToggle: () => setLeftSidebarExpanded(prev => !prev)
-  }), [leftSidebarExpanded])
+  }), [leftSidebarExpanded, rizzEnabled, toggleRizz])
   
   const mockMeeting = React.useMemo<Meeting>(() => ({
     id: roomId,

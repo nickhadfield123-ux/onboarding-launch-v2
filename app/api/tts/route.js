@@ -1,14 +1,45 @@
-// Placeholder TTS API - replace with actual TTS implementation using Realtime_Avatar_AI_Companion components
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   const { text } = await request.json();
 
-  // Placeholder: return a mock audio file or use a TTS service
-  // For now, this will cause fallback to Web Speech API
+  if (!text || typeof text !== 'string') {
+    return NextResponse.json({ error: 'text is required' }, { status: 400 });
+  }
 
-  // TODO: Integrate MeloTTS + OpenVoice for custom voice cloning
-  // Requires Python dependencies and reference audio file
+  const groqApiKey = process.env.GROQ_API_KEY;
+  if (!groqApiKey) {
+    return NextResponse.json({ error: 'GROQ_API_KEY not configured' }, { status: 500 });
+  }
 
-  return new NextResponse('Not implemented', { status: 501 });
+  const groqResponse = await fetch('https://api.groq.com/openai/v1/audio/speech', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${groqApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'playai-tts',
+      voice: 'Celeste-PlayAI',
+      input: text,
+      response_format: 'mp3',
+    }),
+  });
+
+  if (!groqResponse.ok) {
+    const errorText = await groqResponse.text().catch(() => 'Unknown error');
+    return NextResponse.json(
+      { error: 'Groq TTS request failed', details: errorText },
+      { status: 502 }
+    );
+  }
+
+  // Stream the MP3 audio back to the client
+  return new NextResponse(groqResponse.body, {
+    status: 200,
+    headers: {
+      'Content-Type': 'audio/mpeg',
+      'Cache-Control': 'no-cache',
+    },
+  });
 }

@@ -68,10 +68,18 @@ export function PreCallPage({
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
+  const [rizzEnabled, setRizzEnabled] = React.useState(true)
 
   React.useEffect(() => {
     rizzDispatch({ type: 'SET_MODE', payload: 'pre-call' })
   }, [rizzDispatch])
+
+  // Load Rizz preference (default on)
+  React.useEffect(() => {
+    const stored = localStorage.getItem('rizzEnabled')
+    if (stored !== null) setRizzEnabled(stored === 'true')
+  }, [])
+
 
   const toggleUser = (userId: string) => {
     const newSelected = new Set(selectedUsers)
@@ -81,6 +89,11 @@ export function PreCallPage({
       newSelected.add(userId)
     }
     setSelectedUsers(newSelected)
+  }
+
+  const toggleRizz = (next: boolean) => {
+    setRizzEnabled(next)
+    localStorage.setItem('rizzEnabled', next ? 'true' : 'false')
   }
 
   const handleInvite = () => {
@@ -304,6 +317,20 @@ export function PreCallPage({
               <CardTitle>Call Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Rizz toggle — visible before joining, near Join button */}
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                <span className="text-sm font-medium text-slate-700">Rizz on call</span>
+                <button
+                  onClick={() => toggleRizz(!rizzEnabled)}
+                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rizzEnabled ? 'bg-[#534AB7]' : 'bg-gray-300'}`}
+                  aria-label="Toggle Rizz on call"
+                >
+                  <span
+                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${rizzEnabled ? 'translate-x-4.5' : 'translate-x-0.5'}`}
+                  />
+                </button>
+              </div>
+
               <div className="flex gap-3">
                 <Button 
                   onClick={() => {
