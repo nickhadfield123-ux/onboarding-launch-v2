@@ -24,9 +24,17 @@ export default function RoomV2Page() {
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
   
+  // Diagnostic: track each sidebar effect dep individually to identify the culprit
+  React.useEffect(() => {
+    console.log('DEP CHANGED: callHasStarted =', callHasStarted);
+  }, [callHasStarted]);
+  React.useEffect(() => {
+    console.log('DEP CHANGED: callHasEnded =', callHasEnded);
+  }, [callHasEnded]);
+
   // Reset sidebar expanded state when transitioning between states
   React.useEffect(() => {
-    console.log('useEffect firing: sidebar state sync on callHasStarted/callHasEnded change')
+    console.log('SIDEBAR EFFECT running, deps:', { callHasStarted, callHasEnded });
     const next = !callHasStarted || callHasEnded
     setLeftSidebarExpanded(prev => prev === next ? prev : next)
   }, [callHasStarted, callHasEnded])
