@@ -36,6 +36,7 @@ from pipecat.processors.aggregators.llm_response_universal import (
 from pipecat.services.groq.llm import GroqLLMService
 from pipecat.services.groq.tts import GroqTTSService
 from pipecat.transports.daily.transport import DailyTransport
+from pipecat.transports.daily.transport import DailyParams
 
 # Mistral SDK imported at top level for the post-call fallback
 from mistralai import Mistral
@@ -350,7 +351,7 @@ async def create_bot_token(room_url: str, http: aiohttp.ClientSession) -> str:
                 "room_name": room_name,
                 "is_owner": True,
                 "user_name": "Rizz",
-                "user_data": {"type": "ai_bot", "avatar": "rizz"},
+                
                 "enable_recording": "local",
                 "auto_start_transcription": True,
             }
@@ -378,13 +379,13 @@ async def run_bot(room_url: str, token: Optional[str] = None):
             room_url=room_url,
             token=token,
             bot_name="Rizz",
-            params={
-                "audio_in_enabled": True,
-                "audio_out_enabled": True,
-                "transcription_enabled": True,
-                "vad_enabled": True,
-                "vad_analyzer": SileroVADAnalyzer(),
-            },
+            params=DailyParams(
+                audio_in_enabled=True,
+                audio_out_enabled=True,
+                transcription_enabled=True,
+                vad_enabled=True,
+                vad_analyzer=SileroVADAnalyzer(),
+            ),
         )
 
         # STT — Groq Whisper large-v3 (free, high accuracy)
