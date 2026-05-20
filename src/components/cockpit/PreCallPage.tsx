@@ -66,6 +66,13 @@ export function PreCallPage({
   // Verify component is rendering on client side
   console.log('🎨 PreCallPage rendering with:', { meeting, roomUrl })
   
+  // Client-side only rendering flag — prevents hydration mismatches
+  // from Date formatting (different output on Node vs browser)
+  const [isClient, setIsClient] = React.useState(false)
+  React.useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
@@ -234,7 +241,7 @@ export function PreCallPage({
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Duration: {Math.round((new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) / (1000 * 60))} min</span>
+                  <span>Duration: {isClient ? Math.round((new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) / (1000 * 60)) : '...'} min</span>
                 </div>
               </div>
             </CardContent>
