@@ -6,7 +6,7 @@ globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
-import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId } from "@daily-co/daily-react"
+import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
 import { useMemo, useCallback } from "react"
 import {
   ArrowLeft,
@@ -71,6 +71,7 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
   const [sharingParticipantName, setSharingParticipantName] = React.useState<string | null>(null)
   const screenShareVideoRef = React.useRef<HTMLVideoElement>(null)
 
+  const { screens } = useScreenShare();
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
 
@@ -303,6 +304,20 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
                   Stop Sharing
                 </Button>
               )}
+            </div>
+          )}
+
+          {screens.length > 0 && (
+            <div style={{ width: '100%', marginBottom: '12px' }}>
+              {screens.map((screen) => (
+                <DailyVideo
+                  key={screen.screenId}
+                  automirror
+                  sessionId={screen.session_id}
+                  type="screenVideo"
+                  style={{ width: '100%', borderRadius: '12px' }}
+                />
+              ))}
             </div>
           )}
 
