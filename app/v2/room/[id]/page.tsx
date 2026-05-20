@@ -11,6 +11,7 @@ const MemoCallTV = dynamic(() => import("../../../call-tv/[roomId]/CallTVClient"
 const PreCallPage = dynamic(() => import("@/components/cockpit/PreCallPage").then(mod => mod.PreCallPage), { ssr: false })
 import { getHubUrl } from "@/lib/utils"
 import { RizzTile } from "@/components/RizzTile"
+import { useRizz } from "@/hooks/useRizz"
 
 export default function RoomV2Page() {
   const parentRenderCount = React.useRef(0)
@@ -24,40 +25,7 @@ export default function RoomV2Page() {
   const [callHasEnded, setCallHasEnded] = React.useState(false)
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
-  const [rizzEnabled, setRizzEnabled] = React.useState(true)
 
-  const toggleRizz = React.useCallback(async (next: boolean) => {
-    const roomUrl = `https://resourceful.daily.co/${roomId}`
-    setRizzEnabled(next)
-    localStorage.setItem('rizzEnabled', next ? 'true' : 'false')
-
-    if (next) {
-      // Turn ON → start bot
-      try {
-        await fetch('/api/rizz-bot/start', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomUrl }),
-        })
-        console.log('[Rizz] turned ON mid-call')
-      } catch (e) {
-        console.log('[Rizz] start error (silent):', e)
-      }
-    } else {
-      // Turn OFF → stop bot
-      try {
-        await fetch('/api/rizz-bot/stop', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomUrl }),
-        })
-        console.log('[Rizz] turned OFF mid-call')
-      } catch (e) {
-        console.log('[Rizz] stop error (silent):', e)
-      }
-    }
-  }, [roomId])
-   
   // Diagnostic: track each sidebar effect dep individually to identify the culprit
 
   React.useEffect(() => {
@@ -78,23 +46,8 @@ export default function RoomV2Page() {
     }
   }, [callHasEnded])
 
-  // Load Rizz preference + start bot on mount (only if enabled)
-  React.useEffect(() => {
-    const stored = localStorage.getItem('rizzEnabled')
-    const enabled = stored === null ? true : stored === 'true'
-    setRizzEnabled(enabled)
+  const { rizzEnabled, toggleRizz } = useRizz(roomId)
 
-    if (enabled) {
-      const roomUrl = `https://resourceful.daily.co/${roomId}`
-      fetch('/api/rizz-bot/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomUrl }),
-      })
-        .then(() => console.log('[Rizz] bot start requested for', roomUrl))
-        .catch((err) => console.log('[Rizz] bot start error (silent):', err))
-    }
-  }, []) // fire once on mount
 
   // Stabilize leftSidebar prop to prevent unnecessary re-renders in PlatformFrame
   const leftSidebar = React.useMemo(() => ({

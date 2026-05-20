@@ -60,10 +60,13 @@ const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: P
 export default CallTVClient
 
 const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) {
-  console.log('📹 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
   const hasJoined = React.useRef(false)
+
+  React.useEffect(() => {
+    console.log('📹 CallInner IS MOUNTING')
+  }, [])
 
   const [isJoined, setIsJoined] = React.useState(false)
   const [isJoining, setIsJoining] = React.useState(false)
