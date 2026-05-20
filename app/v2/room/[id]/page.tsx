@@ -5,10 +5,10 @@ import dynamic from "next/dynamic"
 import { useParams, useRouter } from "next/navigation"
 import PlatformFrame from '@/components/shell/PlatformFrame'
 import { RizzPanel } from '@/components/shell'
-import { PreCallPage } from "@/components/cockpit/PreCallPage"
 import { PostCallPage } from "@/components/cockpit/PostCallPage"
 import { Meeting } from "@/lib/meetings/types"
 const MemoCallTV = dynamic(() => import("../../../call-tv/[roomId]/CallTVClient"), { ssr: false })
+const PreCallPage = dynamic(() => import("@/components/cockpit/PreCallPage").then(mod => mod.PreCallPage), { ssr: false })
 import { getHubUrl } from "@/lib/utils"
 
 export default function RoomV2Page() {
