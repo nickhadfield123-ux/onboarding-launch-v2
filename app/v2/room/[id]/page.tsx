@@ -21,10 +21,22 @@ export default function RoomV2Page() {
   const roomId = params.id as string
   
   const [isLinkCopied, setIsLinkCopied] = React.useState(false)
-  const [callHasStarted, setCallHasStarted] = React.useState(false)
+  const [callHasStarted, _setCallHasStarted] = React.useState(false)
   const [callHasEnded, setCallHasEnded] = React.useState(false)
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
+
+  const callHasStartedRef = React.useRef(false)
+
+  const setCallHasStarted = (value: boolean) => {
+    if (value === false && callHasStartedRef.current) {
+      return // prevent resetting to false once it has been true (except on call end)
+    }
+    if (value) {
+      callHasStartedRef.current = true
+    }
+    _setCallHasStarted(value)
+  }
 
   // Diagnostic: track each sidebar effect dep individually to identify the culprit
 

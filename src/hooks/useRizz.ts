@@ -38,20 +38,25 @@ export function useRizz(roomId?: string) {
 
   useEffect(() => {
     const stored = localStorage.getItem('rizzEnabled')
-    const enabled = stored === null ? true : stored === 'true'
-    setRizzEnabled(enabled)
 
-    if (enabled && roomId) {
-      const roomUrl = `https://resourceful.daily.co/${roomId}`
-      fetch('/api/rizz-bot/start', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomUrl }),
-      })
-        .then(() => console.log('[Rizz] bot start requested for', roomUrl))
-        .catch((err) => console.log('[Rizz] bot start error (silent):', err))
+    if (stored === 'false') {
+      toggleRizz(false)
+    } else {
+      // default is on (true or null) — do not call toggleRizz on initial load
+      setRizzEnabled(true)
+
+      if (roomId) {
+        const roomUrl = `https://resourceful.daily.co/${roomId}`
+        fetch('/api/rizz-bot/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomUrl }),
+        })
+          .then(() => console.log('[Rizz] bot start requested for', roomUrl))
+          .catch((err) => console.log('[Rizz] bot start error (silent):', err))
+      }
     }
-  }, [roomId])
+  }, [roomId, toggleRizz])
 
   return { rizzEnabled, toggleRizz }
 }
