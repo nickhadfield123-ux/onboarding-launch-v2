@@ -41,7 +41,10 @@ const CallTVClient = React.memo(function CallTVClient({ roomId, onCallEnded }: P
 
   const callObjectRef = React.useRef<any>(null)
   if (!callObjectRef.current) {
-    callObjectRef.current = DailyIframe.createCallObject()
+    callObjectRef.current = DailyIframe.createCallObject({
+      audioSource: true,
+      videoSource: true,
+    })
   }
 
   // Mount CallInner once — never remount it
@@ -101,7 +104,14 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
     console.log('🚀 Joining:', url)
     setIsJoining(true)
 
-    callObject.join({ url, userName: 'User', audioSource: true, videoSource: true })
+    callObject.join({
+      url,
+      userName: 'User',
+      audioSource: true,
+      videoSource: true,
+      startAudioOff: false,
+      startVideoOff: false,
+    })
       .then(() => {
         console.log('✅ JOINED!')
         setIsJoined(true)
