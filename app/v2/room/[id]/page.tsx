@@ -11,7 +11,6 @@ const MemoCallTV = dynamic(() => import("../../../call-tv/[roomId]/CallTVClient"
 const PreCallPage = dynamic(() => import("@/components/cockpit/PreCallPage").then(mod => mod.PreCallPage), { ssr: false })
 import { getHubUrl } from "@/lib/utils"
 import { RizzTile } from "@/components/RizzTile"
-import { useRizz } from "@/hooks/useRizz"
 
 export default function RoomV2Page() {
   const parentRenderCount = React.useRef(0)
@@ -21,22 +20,10 @@ export default function RoomV2Page() {
   const roomId = params.id as string
   
   const [isLinkCopied, setIsLinkCopied] = React.useState(false)
-  const [callHasStarted, _setCallHasStarted] = React.useState(false)
+  const [callHasStarted, setCallHasStarted] = React.useState(false)
   const [callHasEnded, setCallHasEnded] = React.useState(false)
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
-
-  const callHasStartedRef = React.useRef(false)
-
-  const setCallHasStarted = (value: boolean) => {
-    if (value === false && callHasStartedRef.current) {
-      return // prevent resetting to false once it has been true (except on call end)
-    }
-    if (value) {
-      callHasStartedRef.current = true
-    }
-    _setCallHasStarted(value)
-  }
 
   // Diagnostic: track each sidebar effect dep individually to identify the culprit
 
@@ -58,38 +45,38 @@ export default function RoomV2Page() {
     }
   }, [callHasEnded])
 
-  const { rizzEnabled, toggleRizz } = useRizz(roomId)
+  const [rizzEnabled, setRizzEnabled] = React.useState(true)
 
 
-  // Stabilize leftSidebar prop to prevent unnecessary re-renders in PlatformFrame
+  // Simple leftSidebar with minimal Rizz toggle + tile
   const leftSidebar = React.useMemo(() => ({
     content: (
       <div className="p-6">
-        <h3 className="font-semibold mb-3">Participants</h3>
+        <h3 className="font-semibold mb-4">Participants</h3>
 
-        {/* Rizz toggle pill (small, in sidebar) */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-slate-700">Rizz</span>
-            <button
-              onClick={() => toggleRizz(!rizzEnabled)}
-              className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rizzEnabled ? 'bg-[#534AB7]' : 'bg-gray-300'}`}
-            >
-              <span
-                className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${rizzEnabled ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-              />
-            </button>
-          </div>
-          <div className="text-[10px] text-slate-500 mt-0.5">{rizzEnabled ? 'On — will join' : 'Off'}</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: '12px' }}>Rizz on call</span>
+          <button
+            onClick={() => setRizzEnabled(!rizzEnabled)}
+            style={{
+              fontSize: '10px',
+              padding: '2px 6px',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              background: rizzEnabled ? '#534AB7' : '#ccc',
+              color: rizzEnabled ? 'white' : 'black'
+            }}
+          >
+            {rizzEnabled ? 'On' : 'Off'}
+          </button>
         </div>
 
-        {/* Only show RizzTile when enabled */}
         {rizzEnabled && <RizzTile isSpeaking={false} lastWords="Listening..." />}
       </div>
     ),
     expanded: leftSidebarExpanded,
     onToggle: () => setLeftSidebarExpanded(prev => !prev)
-  }), [leftSidebarExpanded, rizzEnabled, toggleRizz])
+  }), [leftSidebarExpanded, rizzEnabled])
   
   const mockMeeting = React.useMemo<Meeting>(() => ({
     id: roomId,
