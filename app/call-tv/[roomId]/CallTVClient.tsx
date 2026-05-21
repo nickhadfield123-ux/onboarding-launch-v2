@@ -82,13 +82,15 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
   const screenShareVideoRef = React.useRef<HTMLVideoElement>(null)
 
   const { screens } = useScreenShare();
-  const participantIds = useParticipantIds({ filter: 'remote' })
+  const participantFilter = useMemo(() => ({ filter: 'remote' as const }), []);
+  const participantIds = useParticipantIds(participantFilter)
   const localSessionId = useLocalSessionId()
 
   // All participants including local in one array
-  const allIds = localSessionId
-    ? [localSessionId, ...participantIds]
-    : participantIds
+  const allIds = useMemo(() =>
+    localSessionId ? [localSessionId, ...participantIds] : participantIds,
+    [localSessionId, participantIds]
+  )
 
   const audioEls = React.useRef<Map<string, HTMLAudioElement>>(new Map())
 
@@ -268,7 +270,10 @@ const CallInner = React.memo(function CallInner({ roomId, onCallEnded }: Props) 
     }
   }, [screenShareTrack])
 
-  const hasScreenShare = screens.length > 0 || screenShareTrack !== null
+  const hasScreenShare = useMemo(() => 
+    screens.length > 0 || screenShareTrack !== null, 
+    [screens, screenShareTrack]
+  )
 
   return (
     <div className="h-full bg-slate-900">
