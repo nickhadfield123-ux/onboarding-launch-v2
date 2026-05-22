@@ -336,7 +336,8 @@ function CallInner({ roomId, onCallEnded }: Props) {
             <div className="relative w-full h-full bg-black">
               <video
                 ref={screenShareVideoRef}
-                className="w-full h-full object-contain"
+                className="w-full object-contain"
+                style={{ height: '100%' }}
                 autoPlay
                 playsInline
                 muted
