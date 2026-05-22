@@ -156,7 +156,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     recognition.onresult = async (event: any) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim()
       console.log('[rizz] heard:', transcript)
-      if (!/rizz/i.test(transcript)) return
+      if (!/rizz|riz|ritz|rest|res\b/i.test(transcript)) return
       sendToRizz(transcript)
     }
 
