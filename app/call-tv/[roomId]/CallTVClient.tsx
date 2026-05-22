@@ -7,7 +7,7 @@ globalThis.__webpack_disable_ses_lockdown = true;
 import * as React from "react"
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
-import { useMemo, useCallback, useEffect, useRef } from "react"
+import { useMemo, useCallback, useRef } from "react"
 import {
   ArrowLeft,
   Mic,
@@ -100,6 +100,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   const [liveBounties, setLiveBounties] = React.useState<BountyAlert[]>([])
   const [callSummaryReady, setCallSummaryReady] = React.useState(false)
   const [rizzLastWords, setRizzLastWords] = React.useState<string>("")
+  const [rizzInput, setRizzInput] = React.useState("")
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
@@ -313,51 +314,6 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }, [isJoined, roomId])
 
-  useEffect(() => {
-    if (!isJoined) return
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
-
-    const recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.lang = 'en-US'
-
-    recognition.onresult = async (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim()
-      console.log('[rizz] heard:', transcript)
-      if (!/rizz/i.test(transcript)) return
-      const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
-      if (!rizzUrl) return
-      try {
-        const res = await fetch(`${rizzUrl}/chat`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ roomId, message: transcript, speaker: 'User' }),
-        })
-        const data = await res.json()
-        if (data?.text) {
-          onRizzMessage?.(data.text)
-          const ttsRes = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: data.text }),
-          })
-          const blob = await ttsRes.blob()
-          new Audio(URL.createObjectURL(blob)).play()
-        }
-      } catch (err) {
-        console.warn('[rizz] voice trigger failed:', err)
-      }
-    }
-
-    recognition.onerror = (e: any) => console.warn('[rizz] speech recognition error:', e.error)
-    recognition.onend = () => { try { recognition.start() } catch(e) {} }
-    recognition.start()
-    console.log('[rizz] speech recognition started')
-    return () => recognition.stop()
-  }, [isJoined, roomId])
-
   useDailyEvent('joined-meeting', useCallback((e) => {
     console.log('✅ JOINED MEETING EVENT', e)
     setIsJoined(true)
@@ -378,6 +334,33 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     setError(e.errorMsg)
   }, []))
 
+  const sendToRizz = async () => {
+    if (!rizzInput.trim()) return
+    const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
+    if (!rizzUrl) return
+    try {
+      const res = await fetch(`${rizzUrl}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, message: rizzInput, speaker: 'User' }),
+      })
+      const data = await res.json()
+      if (data?.text) {
+        onRizzMessage?.(data.text)
+        const ttsRes = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: data.text }),
+        })
+        const blob = await ttsRes.blob()
+        new Audio(URL.createObjectURL(blob)).play()
+      }
+    } catch (err) {
+      console.warn('[rizz] failed:', err)
+    }
+    setRizzInput('')
+  }
+
   return (
     <div className="h-full flex flex-col bg-slate-900">
       {/* Header Bar */}
@@ -397,6 +380,26 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
               </Badge>
             )}
           </div>
+
+          {isJoined && (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={rizzInput}
+                onChange={(e) => setRizzInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') sendToRizz() }}
+                placeholder="Message to Rizz..."
+                className="bg-slate-800 border border-slate-600 text-white text-sm px-3 py-1 rounded w-56 focus:outline-none focus:border-purple-500 placeholder:text-slate-400"
+              />
+              <button
+                onClick={sendToRizz}
+                disabled={!rizzInput.trim()}
+                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 disabled:text-slate-400 text-white text-sm rounded transition-colors"
+              >
+                Send
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
