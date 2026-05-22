@@ -315,6 +315,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
     recognition.onresult = async (event: any) => {
       const transcript = event.results[event.results.length - 1][0].transcript.trim()
+      console.log('[rizz] heard:', transcript)
       if (!/rizz/i.test(transcript)) return
       const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
       if (!rizzUrl) return
@@ -343,6 +344,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     recognition.onerror = (e: any) => console.warn('[rizz] speech recognition error:', e.error)
     recognition.onend = () => { try { recognition.start() } catch(e) {} }
     recognition.start()
+    console.log('[rizz] speech recognition started')
     return () => recognition.stop()
   }, [isJoined, roomId])
 
