@@ -24,7 +24,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: 'canopylabs/orpheus-v1-english',
-        voice: 'tara',  // Orpheus English voices: tara, leah, jess, leo, dan, mia, zac, zoe
+        voice: 'hannah',  // Orpheus English voices: tara, leah, jess, leo, dan, mia, zac, zoe, hannah
         input: text,
       }),
     });
