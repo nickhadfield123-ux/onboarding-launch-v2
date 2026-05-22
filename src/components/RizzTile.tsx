@@ -36,7 +36,7 @@ export function RizzTile({ isSpeaking, lastWords }: RizzTileProps) {
       `}</style>
 
       <div
-        className={`w-14 h-14 flex items-center justify-center ${isSpeaking ? 'animate-[pulse_1.5s_ease-in-out_infinite]' : ''}`}
+        className={`w-full h-full flex items-center justify-center ${isSpeaking ? 'animate-[pulse_1.5s_ease-in-out_infinite]' : ''}`}
         style={{
           ...(isSpeaking ? { boxShadow: "0 0 0 4px rgba(108, 66, 194, 0.3)" } : 
                            { animation: "gi 3s ease-in-out infinite, bob 2.8s ease-in-out infinite" })
