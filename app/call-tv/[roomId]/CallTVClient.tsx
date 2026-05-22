@@ -7,7 +7,7 @@ globalThis.__webpack_disable_ses_lockdown = true;
 import * as React from "react"
 import DailyIframe from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
-import { useMemo, useCallback } from "react"
+import { useMemo, useCallback, useEffect } from "react"
 import {
   ArrowLeft,
   Mic,
@@ -301,6 +301,48 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       bountyDismissTimers.current.forEach(clearTimeout)
       bountyDismissTimers.current = []
     }
+  }, [isJoined, roomId])
+
+  useEffect(() => {
+    if (!isJoined) return
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = 'en-US'
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim()
+      if (!/rizz/i.test(transcript)) return
+      const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
+      if (!rizzUrl) return
+      try {
+        const res = await fetch(`${rizzUrl}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ roomId, message: transcript, speaker: 'User' }),
+        })
+        const data = await res.json()
+        if (data?.text) {
+          onRizzMessage?.(data.text)
+          const ttsRes = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: data.text }),
+          })
+          const blob = await ttsRes.blob()
+          new Audio(URL.createObjectURL(blob)).play()
+        }
+      } catch (err) {
+        console.warn('[rizz] voice trigger failed:', err)
+      }
+    }
+
+    recognition.onerror = (e: any) => console.warn('[rizz] speech recognition error:', e.error)
+    recognition.start()
+    return () => recognition.stop()
   }, [isJoined, roomId])
 
   useDailyEvent('joined-meeting', useCallback((e) => {
