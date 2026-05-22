@@ -30,7 +30,7 @@ export default function RoomV2Page() {
     }
   }, [callHasStarted, callHasEnded])
   
-  const mockMeeting: Meeting = {
+  const mockMeeting = React.useMemo<Meeting>(() => ({
     id: roomId,
     title: "Welcome to Resourceful",
     description: "This is your video call room",
@@ -45,7 +45,7 @@ export default function RoomV2Page() {
     visibility: "private",
     created_at: new Date(),
     updated_at: new Date()
-  }
+  }), [roomId])
 
   const handleJoinCall = () => {
     console.log('✅ 🎯 JOIN CALL BUTTON CLICKED!')
@@ -64,6 +64,14 @@ export default function RoomV2Page() {
     setIsLinkCopied(true)
     setTimeout(() => setIsLinkCopied(false), 2000)
   }
+
+  const handleCallEnded = React.useCallback(
+    (duration: number, participantCount: number) => {
+      setCallDuration(duration)
+      setCallHasEnded(true)
+    },
+    []
+  )
 
   console.log('🔄 RoomV2Page rendering | callHasStarted =', callHasStarted)
   console.log('   ➡️ Rendering:', callHasStarted ? 'CALLTVCLIENT' : 'PRECALLPAGE')
@@ -108,10 +116,7 @@ export default function RoomV2Page() {
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
           <CallTVClient 
             roomId={roomId}
-            onCallEnded={(duration, participantCount) => {
-              setCallDuration(duration)
-              setCallHasEnded(true)
-            }}
+            onCallEnded={handleCallEnded}
           />
         </>
       )}
