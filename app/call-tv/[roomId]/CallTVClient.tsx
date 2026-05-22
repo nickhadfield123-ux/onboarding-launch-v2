@@ -88,6 +88,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
 
   const [liveBounties, setLiveBounties] = React.useState<BountyAlert[]>([])
   const [callSummaryReady, setCallSummaryReady] = React.useState(false)
+  const [rizzLastWords, setRizzLastWords] = React.useState<string>("")
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
@@ -237,7 +238,10 @@ function CallInner({ roomId, onCallEnded }: Props) {
     fetch('/api/rizz-call/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roomUrl }),
+      body: JSON.stringify({ 
+        roomUrl, 
+        participantName: callObject?.participants()?.local?.user_name || "there"
+      }),
     })
       .then(r => r.json())
       .then(data => {
@@ -276,6 +280,10 @@ function CallInner({ roomId, onCallEnded }: Props) {
           bountyDismissTimers.current.push(t)
         } else if (type === 'call_ended') {
           setCallSummaryReady(true)
+        } else if (type === 'rizz_message' && payload?.text) {
+          setRizzLastWords(payload.text)
+          // Clear after 8 seconds so it returns to "Listening..."
+          setTimeout(() => setRizzLastWords(""), 8000)
         }
         // 'transcript_line' ignored per spec
       } catch (e) {
@@ -420,7 +428,10 @@ function CallInner({ roomId, onCallEnded }: Props) {
                 <div className="relative w-24 h-16 bg-slate-800 rounded-lg 
                                 overflow-hidden shrink-0 flex items-center 
                                 justify-center">
-                  <RizzTile isSpeaking={false} lastWords="" />
+                   <RizzTile 
+                     isSpeaking={rizzLastWords !== ""} 
+                     lastWords={rizzLastWords} 
+                   />
                 </div>
               </div>
 
@@ -443,10 +454,12 @@ function CallInner({ roomId, onCallEnded }: Props) {
                  />
                 ))}
                  {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
-                  <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
-                   {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe) */}
-                   <RizzTile isSpeaking={false} isListening={true} />
-                 </div>
+                   <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
+                     <RizzTile 
+                       isSpeaking={rizzLastWords !== ""} 
+                       lastWords={rizzLastWords} 
+                     />
+                  </div>
               </div>
            )}
 
