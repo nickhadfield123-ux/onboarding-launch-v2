@@ -26,6 +26,7 @@ export async function POST(request) {
         model: 'canopylabs/orpheus-v1-english',
         voice: 'hannah',  // Orpheus English voices: tara, leah, jess, leo, dan, mia, zac, zoe, hannah
         input: text,
+        response_format: 'wav',
       }),
     });
 
@@ -42,7 +43,7 @@ export async function POST(request) {
     const audioBuffer = await response.arrayBuffer();
     return new NextResponse(audioBuffer, {
       headers: {
-        'Content-Type': 'audio/mpeg',
+        'Content-Type': 'audio/wav',
         'Content-Length': audioBuffer.byteLength.toString(),
       },
     });
