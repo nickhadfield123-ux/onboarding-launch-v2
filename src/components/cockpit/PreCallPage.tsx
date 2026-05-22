@@ -130,7 +130,18 @@ export function PreCallPage({
       {/* Meeting Header */}
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
-          <Button\n            variant="outline"\n            size="default"\n            onClick={() => {\n              const hubUrl = getHubUrl()\n              window.location.href = hubUrl\n            }}\n          >\n            <Home className="h-4 w-4" />\n            Return to Hub\n          </Button>\n        </div>
+          <Button
+          variant="outline"
+          size="default"
+          onClick={() => {
+          const hubUrl = getHubUrl()
+          window.location.href = hubUrl
+          }}
+          >
+          <Home className="h-4 w-4" />
+          Return to Hub
+          </Button>
+          </div>
         <div className="flex-1 space-y-2 mx-6">
           <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
           {meeting.description && (
