@@ -417,7 +417,9 @@ function CallInner({ roomId, onCallEnded }: Props) {
                 ))}
                 
                 {/* Rizz always visible in strip during screenshare */}
-                <div className="shrink-0">
+                <div className="relative w-24 h-16 bg-slate-800 rounded-lg 
+                                overflow-hidden shrink-0 flex items-center 
+                                justify-center">
                   <RizzTile isSpeaking={false} lastWords="" />
                 </div>
               </div>
