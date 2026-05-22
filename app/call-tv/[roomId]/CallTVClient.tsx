@@ -100,7 +100,6 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   const [liveBounties, setLiveBounties] = React.useState<BountyAlert[]>([])
   const [callSummaryReady, setCallSummaryReady] = React.useState(false)
   const [rizzLastWords, setRizzLastWords] = React.useState<string>("")
-  const [rizzInput, setRizzInput] = React.useState("")
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
@@ -334,33 +333,6 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     setError(e.errorMsg)
   }, []))
 
-  const sendToRizz = async () => {
-    if (!rizzInput.trim()) return
-    const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
-    if (!rizzUrl) return
-    try {
-      const res = await fetch(`${rizzUrl}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, message: rizzInput, speaker: 'User' }),
-      })
-      const data = await res.json()
-      if (data?.text) {
-        onRizzMessage?.(data.text)
-        const ttsRes = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.text }),
-        })
-        const blob = await ttsRes.blob()
-        new Audio(URL.createObjectURL(blob)).play()
-      }
-    } catch (err) {
-      console.warn('[rizz] failed:', err)
-    }
-    setRizzInput('')
-  }
-
   return (
     <div className="h-full flex flex-col bg-slate-900">
       {/* Header Bar */}
@@ -380,26 +352,6 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
               </Badge>
             )}
           </div>
-
-          {isJoined && (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={rizzInput}
-                onChange={(e) => setRizzInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') sendToRizz() }}
-                placeholder="Message to Rizz..."
-                className="bg-slate-800 border border-slate-600 text-white text-sm px-3 py-1 rounded w-56 focus:outline-none focus:border-purple-500 placeholder:text-slate-400"
-              />
-              <button
-                onClick={sendToRizz}
-                disabled={!rizzInput.trim()}
-                className="px-3 py-1 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 disabled:text-slate-400 text-white text-sm rounded transition-colors"
-              >
-                Send
-              </button>
-            </div>
-          )}
         </div>
       </header>
 

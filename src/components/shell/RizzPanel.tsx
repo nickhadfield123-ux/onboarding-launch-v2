@@ -42,7 +42,8 @@ export function RizzPanel({ incomingMessage, roomId }: RizzPanelProps) {
 
     // Call Rizz directly via the sidebar (typed messages)
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_RIZZ_SERVER_URL}/chat`, {
+      const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL || ''
+      const res = await fetch(`${rizzUrl.replace(/\/$/, '')}/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ roomId: roomId || 'sidebar', message: text, speaker: 'User' }),
@@ -50,6 +51,19 @@ export function RizzPanel({ incomingMessage, roomId }: RizzPanelProps) {
       const data = await res.json()
       if (data?.text) {
         setMessages(prev => [...prev, { role: 'rizz', text: data.text, ts: Date.now() }])
+
+        // Play Celeste voice for the response (same as call transcript path)
+        try {
+          const ttsRes = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: data.text }),
+          })
+          const blob = await ttsRes.blob()
+          new Audio(URL.createObjectURL(blob)).play()
+        } catch (ttsErr) {
+          console.warn('[rizz] TTS failed for sidebar message:', ttsErr)
+        }
       }
     } catch {
       setMessages(prev => [...prev, { role: 'rizz', text: "Sorry, I'm having trouble connecting right now.", ts: Date.now() }])
