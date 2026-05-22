@@ -1,10 +1,10 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
+  const resend = new Resend(process.env.RESEND_API_KEY);
+
   const { email } = await req.json();
-  
+   
   if (!email) return Response.json({ error: 'Email required' }, { status: 400 });
 
   const magicLink = `https://onboarding-launch-v2.vercel.app/onboardingv4.html?verified=true&email=${encodeURIComponent(email)}`;
