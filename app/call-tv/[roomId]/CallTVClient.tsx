@@ -82,6 +82,8 @@ function CallInner({ roomId, onCallEnded }: Props) {
     ? [localSessionId, ...participantIds]
     : participantIds
 
+  const totalTiles = allIds.length + 1 // +1 for RizzTile
+
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
@@ -356,11 +358,11 @@ function CallInner({ roomId, onCallEnded }: Props) {
           {/* Multi-Participant Grid Layout */}
           {isJoined && !screenShareTrack && (
             <div className={`
-              grid gap-3 p-4 w-full h-full
-              ${allIds.length === 1 ? 'grid-cols-1' : ''}
-              ${allIds.length === 2 ? 'grid-cols-2' : ''}
-              ${allIds.length >= 3 ? 'grid-cols-2 grid-rows-2' : ''}
-            `}>
+               grid gap-3 p-4 w-full h-full
+               ${totalTiles === 1 ? 'grid-cols-1' : ''}
+               ${totalTiles === 2 ? 'grid-cols-2' : ''}
+               ${totalTiles >= 3 ? 'grid-cols-2 grid-rows-2' : ''}
+             `}>
                {allIds.map(id => (
                  <ParticipantTile
                    key={id}
@@ -368,11 +370,11 @@ function CallInner({ roomId, onCallEnded }: Props) {
                    isLocal={id === localSessionId}
                  />
                 ))}
-                {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
-                <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
-                  {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe) */}
-                  <RizzTile isSpeaking={false} isListening={true} />
-                </div>
+                 {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
+                 <div className="relative bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center">
+                   {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe) */}
+                   <RizzTile isSpeaking={false} isListening={true} />
+                 </div>
               </div>
            )}
 
