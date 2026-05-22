@@ -118,7 +118,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
         console.error('❌ Failed:', err)
         setIsJoining(false)
       })
-  }, [callObject, roomId])
+  }, [roomId]) // callObject is stabilized via ref in outer component, do not include in deps
 
   // Call duration timer
   React.useEffect(() => {
@@ -341,6 +341,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
 
     recognition.onerror = (e: any) => console.warn('[rizz] speech recognition error:', e.error)
+    recognition.onend = () => { try { recognition.start() } catch(e) {} }
     recognition.start()
     return () => recognition.stop()
   }, [isJoined, roomId])
