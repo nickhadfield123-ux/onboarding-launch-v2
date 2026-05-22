@@ -1,4 +1,4 @@
-// TTS API — Groq PlayAI TTS for Rizz's voice
+// TTS API — Groq Orpheus TTS for Rizz's voice (English)
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
@@ -23,8 +23,8 @@ export async function POST(request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'playai-tts',
-        voice: 'Celeste-PlayAI',
+        model: 'canopylabs/orpheus-v1-english',
+        voice: 'tara',  // Orpheus English voices: tara, leah, jess, leo, dan, mia, zac, zoe
         input: text,
       }),
     });
