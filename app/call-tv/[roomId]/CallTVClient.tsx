@@ -28,6 +28,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ParticipantTile } from "@/components/cockpit/ParticipantTile"
+import { RizzTile } from "@/components/RizzTile"
+
+interface BountyAlert {
+  text: string
+  speaker: string
+  claimed: boolean
+  ts: string
+}
 
 interface Props {
   roomId: string
@@ -61,6 +69,10 @@ function CallInner({ roomId, onCallEnded }: Props) {
   const [isLocalSharing, setIsLocalSharing] = React.useState(false)
   const [sharingParticipantName, setSharingParticipantName] = React.useState<string | null>(null)
   const screenShareVideoRef = React.useRef<HTMLVideoElement>(null)
+  const bountyDismissTimers = React.useRef<NodeJS.Timeout[]>([])
+
+  const [liveBounties, setLiveBounties] = React.useState<BountyAlert[]>([])
+  const [callSummaryReady, setCallSummaryReady] = React.useState(false)
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
@@ -200,6 +212,69 @@ function CallInner({ roomId, onCallEnded }: Props) {
     }
   }, [screenShareTrack])
 
+  // ADDITION 1: Start Rizz bot when joined
+  React.useEffect(() => {
+    if (!isJoined) return
+    const roomUrl = `https://resourceful.daily.co/${roomId}`
+    fetch('/api/rizz-call/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ roomUrl }),
+    })
+      .then(r => r.json())
+      .then(data => {
+        if (data?.status === 'unavailable') console.warn('[rizz] start unavailable')
+      })
+      .catch(err => console.warn('[rizz] start failed silently:', err))
+  }, [isJoined, roomId])
+
+  // ADDITION 2: SSE listener for live Rizz events
+  React.useEffect(() => {
+    if (!isJoined) return
+    const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
+    if (!rizzUrl) {
+      console.warn('[rizz] NEXT_PUBLIC_RIZZ_SERVER_URL not set')
+      return
+    }
+    const es = new EventSource(`${rizzUrl}/events/${roomId}`)
+    es.onmessage = (ev) => {
+      try {
+        const { type, payload } = JSON.parse(ev.data)
+        if (type === 'bounty_detected' && payload) {
+          const alert: BountyAlert = {
+            text: payload.text || '',
+            speaker: payload.speaker || 'Someone',
+            claimed: !!payload.claimed,
+            ts: payload.ts || new Date().toISOString(),
+          }
+          setLiveBounties(prev => {
+            const next = [alert, ...prev].slice(0, 3)
+            return next
+          })
+          // auto-dismiss after 8s (tracked for cleanup)
+          const t = setTimeout(() => {
+            setLiveBounties(prev => prev.filter(b => b.ts !== alert.ts))
+          }, 8000)
+          bountyDismissTimers.current.push(t)
+        } else if (type === 'call_ended') {
+          setCallSummaryReady(true)
+        }
+        // 'transcript_line' ignored per spec
+      } catch (e) {
+        console.warn('[rizz] SSE parse error:', e)
+      }
+    }
+    es.onerror = () => {
+      // silent, will auto-reconnect or close on unmount
+    }
+    return () => {
+      es.close()
+      // clear any pending auto-dismiss timers to prevent setState after unmount
+      bountyDismissTimers.current.forEach(clearTimeout)
+      bountyDismissTimers.current = []
+    }
+  }, [isJoined, roomId])
+
   useDailyEvent('joined-meeting', useCallback((e) => {
     console.log('✅ JOINED MEETING EVENT', e)
     setIsJoined(true)
@@ -286,26 +361,59 @@ function CallInner({ roomId, onCallEnded }: Props) {
               ${allIds.length === 2 ? 'grid-cols-2' : ''}
               ${allIds.length >= 3 ? 'grid-cols-2 grid-rows-2' : ''}
             `}>
-              {allIds.map(id => (
-                <ParticipantTile
-                  key={id}
-                  sessionId={id}
-                  isLocal={id === localSessionId}
-                />
-              ))}
-            </div>
-          )}
+               {allIds.map(id => (
+                 <ParticipantTile
+                   key={id}
+                   sessionId={id}
+                   isLocal={id === localSessionId}
+                 />
+               ))}
+               {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe, lastWords falls back to "Listening...") */}
+               <RizzTile isSpeaking={false} isListening={true} />
+             </div>
+           )}
 
-          {/* Call Status Overlay */}
-          {isJoined && (
-            <div className="absolute bottom-4 left-4 bg-black/50 rounded-lg px-3 py-2">
-              <div className="flex items-center space-x-2 text-white">
-                <Users className="h-4 w-4" />
-                <span className="text-sm">{allIds.length} in call</span>
-              </div>
-            </div>
-          )}
-        </div>
+           {/* Call Status Overlay */}
+           {isJoined && (
+             <div className="absolute bottom-4 left-4 bg-black/50 rounded-lg px-3 py-2">
+               <div className="flex items-center space-x-2 text-white">
+                 <Users className="h-4 w-4" />
+                 <span className="text-sm">{allIds.length} in call</span>
+               </div>
+             </div>
+           )}
+
+           {/* ADDITION 3: Bounty alert strip (max 3, auto-dismiss 8s) */}
+           {liveBounties.length > 0 && (
+             <div className="absolute bottom-20 left-4 right-4 flex flex-wrap gap-2 z-10">
+                 {liveBounties.map((bounty, idx) => (
+                   <div
+                     key={`${bounty.ts}-${idx}`}
+                     className="flex-1 min-w-[220px] bg-slate-800/95 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white flex items-center gap-2 shadow-xl"
+                     style={{ animation: 'fadeUp 0.2s ease-out' }}
+                   >
+                     <span className="text-[#2d9e6b] font-semibold truncate max-w-[80px]">{bounty.speaker}</span>
+                     <span className="text-slate-300 truncate flex-1">{bounty.text.length > 60 ? bounty.text.slice(0, 57) + '...' : bounty.text}</span>
+                     {bounty.claimed ? (
+                       <span className="ml-auto text-[10px] px-1.5 py-0 rounded bg-green-500/20 text-green-400 border border-green-500/30">Claimed</span>
+                     ) : (
+                       <span className="ml-auto text-[10px] px-1.5 py-0 rounded bg-slate-600/80 text-slate-400">Open</span>
+                     )}
+                   </div>
+                 ))}
+               </div>
+           )}
+
+           {/* ADDITION 3: View summary pill when call_ended received */}
+           {callSummaryReady && (
+             <a
+               href={`/call/${roomId}/summary`}
+               className="absolute top-4 right-4 bg-slate-800/90 hover:bg-slate-700 border border-[#6c42c2]/60 text-white text-sm px-3 py-1 rounded-full flex items-center gap-1 z-20 shadow-md"
+             >
+               View summary →
+             </a>
+           )}
+         </div>
 
         {/* Call Controls Overlay */}
         {isJoined && (
