@@ -321,7 +321,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
 
       {/* Video Area */}
       <main className="h-[calc(100%-56px)] bg-slate-900 relative">
-        <div className="w-full h-full p-4">
+        <div className="w-full h-full p-4 flex flex-col">
           {!isJoined && (
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-white">
