@@ -63,23 +63,17 @@ export function PreCallPage({
   onCopyLink, 
   isLinkCopied 
 }: PreCallPageProps) {
+  // Verify component is rendering on client side
   console.log('🎨 PreCallPage rendering with:', { meeting, roomUrl })
   
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
-  const [rizzEnabled, setRizzEnabled] = React.useState(true)
 
+  // Set Rizz mode to pre-call when component mounts
   React.useEffect(() => {
     rizzDispatch({ type: 'SET_MODE', payload: 'pre-call' })
   }, [rizzDispatch])
-
-  // Load Rizz preference (default on)
-  React.useEffect(() => {
-    const stored = localStorage.getItem('rizzEnabled')
-    if (stored !== null) setRizzEnabled(stored === 'true')
-  }, [])
-
 
   const toggleUser = (userId: string) => {
     const newSelected = new Set(selectedUsers)
@@ -89,11 +83,6 @@ export function PreCallPage({
       newSelected.add(userId)
     }
     setSelectedUsers(newSelected)
-  }
-
-  const toggleRizz = (next: boolean) => {
-    setRizzEnabled(next)
-    localStorage.setItem('rizzEnabled', next ? 'true' : 'false')
   }
 
   const handleInvite = () => {
@@ -139,33 +128,16 @@ export function PreCallPage({
   return (
     <div className="space-y-6 text-white">
       {/* Meeting Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="default"
-            onClick={() => {
-              const hubUrl = getHubUrl()
-              window.location.href = hubUrl
-            }}
-            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700 min-w-[140px]"
-          >
-            <Home className="h-4 w-4" />
-            Return to Hub
-          </Button>
-        </div>
-
+      <div className=\"flex items-center justify-between items-stretch\">\n        <div className="flex gap-2">\n          <Button\n            variant="outline"\n            size="default"\n            onClick={() => {\n              const hubUrl = getHubUrl()\n              window.location.href = hubUrl\n            }}\n          >\n            <Home className="h-4 w-4" />\n            Return to Hub\n          </Button>\n        </div>
         <div className="flex-1 space-y-2 mx-6">
           <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
           {meeting.description && (
             <p className="text-muted-foreground">{meeting.description}</p>
           )}
         </div>
-
         <div className="flex gap-2">
           <Button
             variant="outline"
-            size="default"
             onClick={() => {
               console.log('🎯 Invite People button clicked!')
               console.log('📋 onInviteUsers function:', onInviteUsers)
@@ -178,21 +150,24 @@ export function PreCallPage({
             <UserPlus className="h-4 w-4" />
             Invite People
           </Button>
-
           <button
             onClick={() => onJoinCall()}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors duration-150 text-sm shadow-sm h-10"
+            className="inline-flex items-center gap-2 bg-blue-600 
+              hover:bg-blue-700 active:bg-blue-800 text-white 
+              font-semibold px-6 py-2.5 rounded-lg transition-colors 
+              duration-150 text-sm shadow-sm h-10"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5,3 19,12 5,21" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" 
+              height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5,3 19,12 5,21"/>
             </svg>
             Join Call
           </button>
-
           <Button
             variant="secondary"
             onClick={() => {
               console.log('🎯 Cancel button clicked!')
+              // Navigate to user's hub
               const hubUrl = getHubUrl()
               window.location.href = hubUrl
             }}
@@ -317,20 +292,6 @@ export function PreCallPage({
               <CardTitle>Call Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Rizz toggle — visible before joining, near Join button */}
-              <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-                <span className="text-sm font-medium text-slate-700">Rizz on call</span>
-                <button
-                  onClick={() => toggleRizz(!rizzEnabled)}
-                  className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${rizzEnabled ? 'bg-[#534AB7]' : 'bg-gray-300'}`}
-                  aria-label="Toggle Rizz on call"
-                >
-                  <span
-                    className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${rizzEnabled ? 'translate-x-4.5' : 'translate-x-0.5'}`}
-                  />
-                </button>
-              </div>
-
               <div className="flex gap-3">
                 <Button 
                   onClick={() => {

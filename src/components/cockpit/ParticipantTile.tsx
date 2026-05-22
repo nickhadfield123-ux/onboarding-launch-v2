@@ -56,7 +56,7 @@ export function ParticipantTile({ sessionId, isLocal = false }: ParticipantTileP
         autoPlay
         playsInline
         muted={isLocal}
-        className="absolute inset-0 w-full h-full object-cover bg-slate-700"
+        className="absolute inset-0 w-full h-full object-contain bg-slate-700"
       />
       
       {/* Connecting Overlay */}

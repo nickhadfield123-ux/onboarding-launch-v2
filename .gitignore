@@ -39,11 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# rizz-server (self-contained service) - never commit secrets or deps
-rizz-server/.env
-rizz-server/.env.*
-rizz-server/node_modules/
-rizz-server/dist/
-rizz-server/.env.local
-rizz-server/logs/
