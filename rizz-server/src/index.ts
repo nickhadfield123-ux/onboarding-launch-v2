@@ -8,7 +8,13 @@ import {
 } from './session';
 import { detectBounty } from './bountyDetector';
 import { generateSummary } from './summary';
-import { joinRoom, stopTranscription } from './dailyBot';
+import {
+  joinRoom,
+  stopTranscription,
+  getRizzResponse,
+  sendGreeting,
+  clearHistory,
+} from './dailyBot';
 
 const app = express();
 app.use(cors());
@@ -38,6 +44,12 @@ app.post('/start', async (req: Request, res: Response) => {
 
     const session = createSession(roomUrl);
     await joinRoom(roomUrl, session);
+
+    // Optional greeting when a participant name is provided
+    const participantName = req.body?.participantName || 'there';
+    sendGreeting(roomId, participantName, (event, data) =>
+      session.emit(event, data)
+    );
 
     res.json({ status: 'started', roomId });
   } catch (err: any) {
@@ -100,6 +112,7 @@ app.post('/stop', async (req: Request, res: Response) => {
     session.emit('call_ended', summary);
 
     deleteSession(roomId);
+    clearHistory(roomId);
 
     res.json({ status: 'stopped', roomId });
   } catch (err: any) {
@@ -130,6 +143,20 @@ app.post('/webhook/daily', (req: Request, res: Response) => {
         }
 
         session.emit('transcript_line', { speaker, text });
+
+        // Live Rizz response — only when explicitly addressed
+        if (/rizz/i.test(text)) {
+          getRizzResponse(session.roomId, text, speaker)
+            .then((response) => {
+              if (response) {
+                session.emit('rizz_message', {
+                  text: response,
+                  timestamp: Date.now(),
+                });
+              }
+            })
+            .catch((err) => console.error('[rizz] LLM error:', err));
+        }
       }
     }
   }
