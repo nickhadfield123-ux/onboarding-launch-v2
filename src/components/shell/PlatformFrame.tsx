@@ -146,7 +146,7 @@ export default function PlatformFrame({
         )}
 
         {/* Main Content Container */}
-        <div className="flex-1 bg-slate-900 p-6 min-w-0 overflow-auto">
+        <div className="flex-1 bg-slate-900 p-6 min-w-0 overflow-hidden">
           {children}
         </div>
 

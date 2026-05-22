@@ -298,7 +298,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
   }, []))
 
   return (
-    <div className="h-full bg-slate-900">
+    <div className="h-full flex flex-col bg-slate-900">
       {/* Header Bar */}
       <header className="bg-slate-900 border-b border-slate-700 px-4 py-3">
         <div className="flex items-center justify-between">
