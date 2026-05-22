@@ -5,7 +5,7 @@
 globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
-import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId } from "@daily-co/daily-react"
+import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
 import { useMemo, useCallback } from "react"
 import {
   ArrowLeft,
@@ -76,6 +76,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
+  const { screens } = useScreenShare()
 
   // All participants including local in one array
   const allIds = localSessionId
@@ -331,17 +332,36 @@ function CallInner({ roomId, onCallEnded }: Props) {
             </div>
           )}
 
-          {/* Screen Share Layout */}
-          {isJoined && screenShareTrack && (
-            <div className="relative w-full h-full bg-black">
-              <video
-                ref={screenShareVideoRef}
-                className="w-full object-contain"
-                style={{ height: '100%' }}
-                autoPlay
-                playsInline
-                muted
-              />
+          {/* Screen Share Layout - restored Daily useScreenShare + DailyVideo */}
+          {isJoined && (screens.length > 0 || screenShareTrack) && (
+            <div className="screenshare-container relative flex-1 min-h-0 bg-black rounded-lg overflow-hidden"
+                 style={{ height: '100%' }}>
+              
+              {screens.length > 0 && (
+                <div className="w-full h-full">
+                  {screens.map((screen) => (
+                    <DailyVideo
+                      key={screen.screenId}
+                      automirror
+                      sessionId={screen.session_id}
+                      type="screenVideo"
+                      className="w-full"
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {screens.length === 0 && screenShareTrack && (
+                <video
+                  ref={screenShareVideoRef}
+                  className="w-full h-full object-contain"
+                  autoPlay
+                  playsInline
+                  muted
+                />
+              )}
+
               <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
                 📺 {sharingParticipantName || 'Someone'} is sharing
               </div>
@@ -357,7 +377,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
           )}
 
           {/* Multi-Participant Grid Layout */}
-          {isJoined && !screenShareTrack && (
+          {isJoined && !(screens.length > 0 || screenShareTrack) && (
             <div className={`
                grid gap-3 p-4 w-full h-full
                ${totalTiles === 1 ? 'grid-cols-1' : ''}
