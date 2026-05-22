@@ -5,6 +5,7 @@
 globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
+import DailyIframe from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
 import { useMemo, useCallback } from "react"
 import {
@@ -44,9 +45,23 @@ interface Props {
 
 export default function CallTVClient({ roomId, onCallEnded }: Props) {
   console.log('🏗️ CallTVClient outer rendering')
+
+  const callObjectRef = React.useRef<any>(null)
+  if (!callObjectRef.current) {
+    callObjectRef.current = DailyIframe.createCallObject({
+      audioSource: true,
+      videoSource: true,
+    })
+  }
+
+  const innerRef = React.useRef<React.ReactElement | null>(null)
+  if (!innerRef.current) {
+    innerRef.current = <CallInner roomId={roomId} onCallEnded={onCallEnded} />
+  }
+
   return (
-    <DailyProvider>
-      <CallInner roomId={roomId} onCallEnded={onCallEnded} />
+    <DailyProvider callObject={callObjectRef.current}>
+      {innerRef.current}
     </DailyProvider>
   )
 }
