@@ -20,6 +20,7 @@ export default function RoomV2Page() {
   const [callHasEnded, setCallHasEnded] = React.useState(false)
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
+  const [rizzMessage, setRizzMessage] = React.useState<string>('')
   
   // Reset sidebar expanded state when transitioning between states
   React.useEffect(() => {
@@ -84,7 +85,7 @@ export default function RoomV2Page() {
         onToggle: () => setLeftSidebarExpanded(prev => !prev)
       }}
       rightSidebar={{
-        content: <RizzPanel />,
+        content: <RizzPanel incomingMessage={rizzMessage} roomId={roomId} />,
         defaultExpanded: true
       }}
     >
@@ -114,9 +115,10 @@ export default function RoomV2Page() {
       ) : (
         <>
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
-          <CallTVClient 
+          <CallTVClient
             roomId={roomId}
             onCallEnded={handleCallEnded}
+            onRizzMessage={setRizzMessage}
           />
         </>
       )}
