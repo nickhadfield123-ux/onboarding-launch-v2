@@ -54,13 +54,19 @@ export function RizzPanel({ incomingMessage, roomId }: RizzPanelProps) {
 
         // Play Celeste voice for the response (same as call transcript path)
         try {
+          console.log('[rizz] tts text:', data.text)
           const ttsRes = await fetch('/api/tts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: data.text }),
           })
-          const blob = await ttsRes.blob()
-          new Audio(URL.createObjectURL(blob)).play()
+          if (!ttsRes.ok) {
+            const err = await ttsRes.text()
+            console.error('[rizz] tts error:', err)
+          } else {
+            const blob = await ttsRes.blob()
+            new Audio(URL.createObjectURL(blob)).play()
+          }
         } catch (ttsErr) {
           console.warn('[rizz] TTS failed for sidebar message:', ttsErr)
         }
