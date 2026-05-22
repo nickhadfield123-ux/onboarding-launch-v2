@@ -367,10 +367,13 @@ function CallInner({ roomId, onCallEnded }: Props) {
                    sessionId={id}
                    isLocal={id === localSessionId}
                  />
-               ))}
-               {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe, lastWords falls back to "Listening...") */}
-               <RizzTile isSpeaking={false} isListening={true} />
-             </div>
+                ))}
+                {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
+                <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
+                  {/* @ts-expect-error — isListening passed per addition spec; RizzTile interface only declares isSpeaking + lastWords (runtime safe) */}
+                  <RizzTile isSpeaking={false} isListening={true} />
+                </div>
+              </div>
            )}
 
            {/* Call Status Overlay */}

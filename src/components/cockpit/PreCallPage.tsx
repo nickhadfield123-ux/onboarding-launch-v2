@@ -63,14 +63,12 @@ export function PreCallPage({
   onCopyLink, 
   isLinkCopied 
 }: PreCallPageProps) {
-  // Verify component is rendering on client side
   console.log('🎨 PreCallPage rendering with:', { meeting, roomUrl })
   
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
 
-  // Set Rizz mode to pre-call when component mounts
   React.useEffect(() => {
     rizzDispatch({ type: 'SET_MODE', payload: 'pre-call' })
   }, [rizzDispatch])
@@ -131,26 +129,30 @@ export function PreCallPage({
       <div className="flex items-center justify-between">
         <div className="flex gap-2">
           <Button
-          variant="outline"
-          size="default"
-          onClick={() => {
-          const hubUrl = getHubUrl()
-          window.location.href = hubUrl
-          }}
+            variant="outline"
+            size="default"
+            onClick={() => {
+              const hubUrl = getHubUrl()
+              window.location.href = hubUrl
+            }}
+            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700 min-w-[140px]"
           >
-          <Home className="h-4 w-4" />
-          Return to Hub
+            <Home className="h-4 w-4" />
+            Return to Hub
           </Button>
-          </div>
+        </div>
+
         <div className="flex-1 space-y-2 mx-6">
           <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
           {meeting.description && (
             <p className="text-muted-foreground">{meeting.description}</p>
           )}
         </div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
+            size="default"
             onClick={() => {
               console.log('🎯 Invite People button clicked!')
               console.log('📋 onInviteUsers function:', onInviteUsers)
@@ -163,24 +165,21 @@ export function PreCallPage({
             <UserPlus className="h-4 w-4" />
             Invite People
           </Button>
+
           <button
             onClick={() => onJoinCall()}
-            className="inline-flex items-center gap-2 bg-blue-600 
-              hover:bg-blue-700 active:bg-blue-800 text-white 
-              font-semibold px-6 py-2.5 rounded-lg transition-colors 
-              duration-150 text-sm shadow-sm h-10"
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors duration-150 text-sm shadow-sm h-10"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" 
-              height="14" viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5,3 19,12 5,21"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5,3 19,12 5,21" />
             </svg>
             Join Call
           </button>
+
           <Button
             variant="secondary"
             onClick={() => {
               console.log('🎯 Cancel button clicked!')
-              // Navigate to user's hub
               const hubUrl = getHubUrl()
               window.location.href = hubUrl
             }}
