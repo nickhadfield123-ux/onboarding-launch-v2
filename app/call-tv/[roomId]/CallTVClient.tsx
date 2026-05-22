@@ -347,47 +347,81 @@ function CallInner({ roomId, onCallEnded }: Props) {
             </div>
           )}
 
-          {/* Screen Share Layout - restored Daily useScreenShare + DailyVideo */}
           {isJoined && (screens.length > 0 || screenShareTrack) && (
-            <div className="screenshare-container relative flex-1 min-h-0 bg-black rounded-lg overflow-hidden"
-                 style={{ height: '100%' }}>
+            <div className="flex flex-col h-full min-h-0">
               
-              {screens.length > 0 && (
-                <div className="w-full h-full">
-                  {screens.map((screen) => (
-                    <DailyVideo
-                      key={screen.screenId}
-                      automirror
-                      sessionId={screen.session_id}
-                      type="screenVideo"
-                      className="w-full"
-                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                    />
-                  ))}
+              {/* Main screenshare area */}
+              <div className="relative flex-1 min-h-0 bg-black rounded-lg overflow-hidden">
+                
+                {screens.length > 0 && (
+                  <div className="w-full h-full">
+                    {screens.map((screen) => (
+                      <DailyVideo
+                        key={screen.screenId}
+                        automirror
+                        sessionId={screen.session_id}
+                        type="screenVideo"
+                        className="w-full"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {screens.length === 0 && screenShareTrack && (
+                  <video ref={screenShareVideoRef}
+                    className="w-full object-contain"
+                    style={{ height: '100%' }}
+                    autoPlay playsInline muted
+                  />
+                )}
+
+                {/* sharing label overlay */}
+                <div className="absolute inset-x-0 top-0 flex items-center 
+                                justify-between p-3 bg-gradient-to-b 
+                                from-black/60 to-transparent">
+                  <span className="text-white text-sm font-medium">
+                    📺 {sharingParticipantName || 'Someone'} is sharing
+                  </span>
                 </div>
-              )}
 
-              {screens.length === 0 && screenShareTrack && (
-                <video
-                  ref={screenShareVideoRef}
-                  className="w-full h-full object-contain"
-                  autoPlay
-                  playsInline
-                  muted
-                />
-              )}
-
-              <div className="absolute bottom-4 left-4 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
-                📺 {sharingParticipantName || 'Someone'} is sharing
+                {isLocalSharing && (
+                  <Button
+                    onClick={toggleScreenShare}
+                    className="absolute bottom-3 right-3 bg-blue-600 
+                               hover:bg-blue-700 text-white px-4 py-2 
+                               rounded-lg z-10"
+                  >
+                    Stop Sharing
+                  </Button>
+                )}
               </div>
-              {isLocalSharing && (
-                <Button
-                  onClick={toggleScreenShare}
-                  className="absolute bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-                >
-                  Stop Sharing
-                </Button>
-              )}
+
+              {/* Minimised participant strip — shown during screenshare */}
+              <div className="flex flex-row gap-2 p-2 overflow-x-auto shrink-0">
+                {allIds.map(id => (
+                  <div key={id} className="relative w-24 h-16 bg-slate-800 
+                                            rounded-lg overflow-hidden shrink-0
+                                            flex items-center justify-center">
+                    <DailyVideo
+                      sessionId={id}
+                      type="video"
+                      automirror={id === localSessionId}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div className="absolute bottom-0 inset-x-0 text-center 
+                                    text-[10px] text-white bg-black/40 py-0.5">
+                      {id === localSessionId ? 'You' : 'Guest'}
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Rizz always visible in strip during screenshare */}
+                <div className="shrink-0">
+                  <RizzTile isSpeaking={false} lastWords="" />
+                </div>
+              </div>
+
             </div>
           )}
 
