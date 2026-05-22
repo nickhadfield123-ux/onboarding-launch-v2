@@ -41,9 +41,10 @@ interface BountyAlert {
 interface Props {
   roomId: string
   onCallEnded?: (duration: number, participantCount: number) => void
+  onRizzMessage?: (text: string) => void
 }
 
-export default function CallTVClient({ roomId, onCallEnded }: Props) {
+export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Props) {
   console.log('🏗️ CallTVClient outer rendering')
 
   const callObjectRef = React.useRef<any>(null)
@@ -56,7 +57,7 @@ export default function CallTVClient({ roomId, onCallEnded }: Props) {
 
   const innerRef = React.useRef<React.ReactElement | null>(null)
   if (!innerRef.current) {
-    innerRef.current = <CallInner roomId={roomId} onCallEnded={onCallEnded} />
+    innerRef.current = <CallInner roomId={roomId} onCallEnded={onCallEnded} onRizzMessage={onRizzMessage} />
   }
 
   return (
@@ -66,7 +67,7 @@ export default function CallTVClient({ roomId, onCallEnded }: Props) {
   )
 }
 
-function CallInner({ roomId, onCallEnded }: Props) {
+function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   console.log('🔵 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
@@ -282,6 +283,7 @@ function CallInner({ roomId, onCallEnded }: Props) {
           setCallSummaryReady(true)
         } else if (type === 'rizz_message' && payload?.text) {
           setRizzLastWords(payload.text)
+          onRizzMessage?.(payload.text)   // ← add this line
           // Clear after 8 seconds so it returns to "Listening..."
           setTimeout(() => setRizzLastWords(""), 8000)
         }
