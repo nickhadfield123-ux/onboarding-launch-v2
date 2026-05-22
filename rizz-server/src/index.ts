@@ -121,6 +121,21 @@ app.post('/stop', async (req: Request, res: Response) => {
   }
 });
 
+// POST /chat — for typed messages from the sidebar RizzPanel
+app.post('/chat', async (req: Request, res: Response) => {
+  const { roomId, message, speaker } = req.body
+  if (!message) return res.status(400).json({ error: 'message required' })
+
+  const response = await getRizzResponse(roomId || 'sidebar', message, speaker || 'User')
+  if (response) {
+    // Also emit to SSE if there's an active session
+    const session = getSession(roomId)
+    session?.emit('rizz_message', { text: response, timestamp: Date.now() })
+    return res.json({ text: response })
+  }
+  return res.status(500).json({ error: 'no response' })
+})
+
 // POST /webhook/daily  — receives transcription events from Daily.co
 app.post('/webhook/daily', (req: Request, res: Response) => {
   const event = req.body || {};
