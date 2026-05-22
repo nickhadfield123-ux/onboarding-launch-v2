@@ -8,11 +8,7 @@ interface RizzTileProps {
 }
 
 export function RizzTile({ isSpeaking, lastWords }: RizzTileProps) {
-  const gradientId = `ig-${React.useId().replace(/[^a-zA-Z0-9]/g, '')}`
-
-  const idleAnimation = !isSpeaking 
-    ? 'gi 3s ease-in-out infinite, bob 2.8s ease-in-out infinite' 
-    : undefined
+  const gradientId = "rizz-ig"
 
   return (
     <div className="flex flex-col items-center p-3 bg-slate-800/80 rounded-xl border border-slate-700">
@@ -42,8 +38,8 @@ export function RizzTile({ isSpeaking, lastWords }: RizzTileProps) {
       <div
         className={`w-14 h-14 flex items-center justify-center ${isSpeaking ? 'animate-[pulse_1.5s_ease-in-out_infinite]' : ''}`}
         style={{
-          ...(isSpeaking ? { boxShadow: "0 0 0 4px rgba(108, 66, 194, 0.3)" } : {}),
-          animation: idleAnimation
+          ...(isSpeaking ? { boxShadow: "0 0 0 4px rgba(108, 66, 194, 0.3)" } : 
+                           { animation: "gi 3s ease-in-out infinite, bob 2.8s ease-in-out infinite" })
         }}
       >
         <svg 
