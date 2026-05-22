@@ -16,6 +16,11 @@ app.use(express.json({ limit: '2mb' }));
 
 const PORT = process.env.PORT || 3001;
 
+// Health check
+app.get('/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
 // POST /start
 app.post('/start', async (req: Request, res: Response) => {
   try {
@@ -131,11 +136,6 @@ app.post('/webhook/daily', (req: Request, res: Response) => {
 
   // Always acknowledge quickly
   res.status(200).send('ok');
-});
-
-// Simple health check
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
 });
 
 app.listen(PORT, () => {
