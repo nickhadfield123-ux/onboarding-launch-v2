@@ -1,23 +1,61 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { MessageCircle, Users, TrendingUp, Send } from 'lucide-react'
 
-interface RizzPanelProps {
-  message?: string
-  items?: Array<{ dot: string; text: string; action?: string }>
-  stats?: Array<{ value: string; label: string }>
-  placeholder?: string
-  userName?: string
+interface Message {
+  role: 'rizz' | 'user'
+  text: string
+  ts: number
 }
 
-export function RizzPanel({
-  message = "I'm Rizz, your AI assistant. How can I help you today?",
-  items = [],
-  stats = [],
-  placeholder = "Ask me anything...",
-  userName = "there"
-}: RizzPanelProps) {
+interface RizzPanelProps {
+  incomingMessage?: string   // SSE rizz_message drops in here
+  roomId?: string
+}
+
+export function RizzPanel({ incomingMessage, roomId }: RizzPanelProps) {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'rizz', text: "I'm Rizz. Say my name on the call or type here.", ts: Date.now() }
+  ])
+  const [input, setInput] = useState('')
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const lastIncoming = useRef<string>('')
+
+  // When a new SSE message arrives, add it as a Rizz bubble
+  useEffect(() => {
+    if (!incomingMessage || incomingMessage === lastIncoming.current) return
+    lastIncoming.current = incomingMessage
+    setMessages(prev => [...prev, { role: 'rizz', text: incomingMessage, ts: Date.now() }])
+  }, [incomingMessage])
+
+  // Auto-scroll
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  const sendMessage = async () => {
+    const text = input.trim()
+    if (!text) return
+    setInput('')
+    setMessages(prev => [...prev, { role: 'user', text, ts: Date.now() }])
+
+    // Call Rizz directly via the sidebar (typed messages)
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_RIZZ_SERVER_URL}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId: roomId || 'sidebar', message: text, speaker: 'User' }),
+      })
+      const data = await res.json()
+      if (data?.text) {
+        setMessages(prev => [...prev, { role: 'rizz', text: data.text, ts: Date.now() }])
+      }
+    } catch {
+      setMessages(prev => [...prev, { role: 'rizz', text: "Sorry, I'm having trouble connecting right now.", ts: Date.now() }])
+    }
+  }
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
@@ -33,74 +71,49 @@ export function RizzPanel({
         </div>
       </div>
 
-      {/* Welcome Message */}
-      <div className="p-4">
-        <div className="bg-gradient-to-r from-purple-50 to-green-50 rounded-xl p-3 border border-purple-100">
-          <p className="text-xs text-gray-700 leading-relaxed">
-            {message}
-          </p>
-        </div>
+      {/* Chat bubbles */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-xs leading-relaxed ${
+              m.role === 'rizz'
+                ? 'bg-gradient-to-r from-purple-50 to-green-50 border border-purple-100 text-gray-700'
+                : 'bg-purple-600 text-white'
+            }`}>
+              {m.text}
+            </div>
+          </div>
+        ))}
+        <div ref={bottomRef} />
       </div>
-
-      {/* Status Items */}
-      {items.length > 0 && (
-        <div className="px-4 pb-3">
-          <div className="space-y-2">
-            {items.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <div 
-                  className="w-2 h-2 rounded-full flex-shrink-0" 
-                  style={{ backgroundColor: item.dot }}
-                />
-                <span className="text-xs text-gray-700 flex-1">{item.text}</span>
-                {item.action && (
-                  <button className="text-xs text-purple-600 hover:text-purple-700 font-medium">
-                    {item.action}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Stats Grid */}
-      {stats.length > 0 && (
-        <div className="px-4 pb-4">
-          <div className="grid grid-cols-2 gap-2">
-            {stats.map((stat, i) => (
-              <div key={i} className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-lg font-semibold text-gray-900">{stat.value}</div>
-                <div className="text-xs text-gray-600">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Quick Actions */}
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-2 gap-2">
-          <button className="flex items-center justify-center gap-1 p-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
-            <Users className="h-3 w-3 text-purple-600" />
-            <span className="text-xs text-purple-700">Network</span>
-          </button>
-          <button className="flex items-center justify-center gap-1 p-2 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
-            <TrendingUp className="h-3 w-3 text-green-600" />
-            <span className="text-xs text-green-700">Progress</span>
-          </button>
-        </div>
+      <div className="px-4 pb-3 grid grid-cols-2 gap-2">
+        <button className="flex items-center justify-center gap-1 p-2 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+          <Users className="h-3 w-3 text-purple-600" />
+          <span className="text-xs text-purple-700">Network</span>
+        </button>
+        <button className="flex items-center justify-center gap-1 p-2 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+          <TrendingUp className="h-3 w-3 text-green-600" />
+          <span className="text-xs text-green-700">Progress</span>
+        </button>
       </div>
 
-      {/* Chat Input */}
-      <div className="mt-auto p-4 border-t border-gray-200">
+      {/* Input */}
+      <div className="p-4 border-t border-gray-200">
         <div className="relative">
           <input
             type="text"
-            placeholder={placeholder}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendMessage()}
+            placeholder="Ask me anything..."
             className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-10"
           />
-          <button className="absolute right-1.5 top-1.5 p-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors">
+          <button
+            onClick={sendMessage}
+            className="absolute right-1.5 top-1.5 p-1.5 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+          >
             <Send className="h-3 w-3 text-white" />
           </button>
         </div>
