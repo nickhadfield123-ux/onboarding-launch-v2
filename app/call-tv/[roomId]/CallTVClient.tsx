@@ -112,6 +112,61 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   const totalTiles = allIds.length + 1 // +1 for RizzTile
 
+  // Stable send function for voice-triggered Rizz messages
+  const sendToRizz = React.useCallback(async (message: string) => {
+    const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
+    if (!rizzUrl) return
+    try {
+      const res = await fetch(`${rizzUrl.replace(/\/$/, '')}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ roomId, message, speaker: 'User' }),
+      })
+      const data = await res.json()
+      if (data?.text) {
+        onRizzMessage?.(data.text)
+
+        // Play TTS (Celeste / Orpheus voice)
+        const ttsRes = await fetch('/api/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: data.text }),
+        })
+        if (ttsRes.ok) {
+          const blob = await ttsRes.blob()
+          new Audio(URL.createObjectURL(blob)).play()
+        }
+      }
+    } catch (err) {
+      console.warn('[rizz] voice trigger failed:', err)
+    }
+  }, [roomId, onRizzMessage])
+
+  // Early speech recognition — starts on mount (before Daily joins)
+  // so it can grab the mic before Daily claims it exclusively.
+  React.useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SpeechRecognition) return
+
+    const recognition = new SpeechRecognition()
+    recognition.continuous = true
+    recognition.interimResults = false
+    recognition.lang = 'en-US'
+
+    recognition.onresult = async (event: any) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim()
+      console.log('[rizz] heard:', transcript)
+      if (!/rizz/i.test(transcript)) return
+      sendToRizz(transcript)
+    }
+
+    recognition.onerror = (e: any) => console.warn('[rizz] error:', e.error)
+    recognition.onend = () => { try { recognition.start() } catch(e) {} }
+    recognition.start()
+
+    return () => recognition.stop()
+  }, [])  // empty deps — runs once on mount, before Daily
+
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
