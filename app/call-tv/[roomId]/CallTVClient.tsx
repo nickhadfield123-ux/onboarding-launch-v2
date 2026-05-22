@@ -5,9 +5,9 @@
 globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
-import DailyIframe from '@daily-co/daily-js'
+import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
 import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
-import { useMemo, useCallback, useEffect } from "react"
+import { useMemo, useCallback, useEffect, useRef } from "react"
 import {
   ArrowLeft,
   Mic,
@@ -31,6 +31,21 @@ import { Badge } from "@/components/ui/badge"
 import { ParticipantTile } from "@/components/cockpit/ParticipantTile"
 import { RizzTile } from "@/components/RizzTile"
 
+// Module-level singleton for the Daily callObject.
+// This survives React remounts of CallTVClient / the parent page,
+// guaranteeing the exact same callObject instance is always returned.
+let _callObject: DailyCall | null = null
+
+function getCallObject(): DailyCall {
+  if (!_callObject) {
+    _callObject = DailyIframe.createCallObject({
+      audioSource: true,
+      videoSource: true,
+    })
+  }
+  return _callObject
+}
+
 interface BountyAlert {
   text: string
   speaker: string
@@ -47,21 +62,16 @@ interface Props {
 export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Props) {
   console.log('🏗️ CallTVClient outer rendering')
 
-  const callObjectRef = React.useRef<any>(null)
-  if (!callObjectRef.current) {
-    callObjectRef.current = DailyIframe.createCallObject({
-      audioSource: true,
-      videoSource: true,
-    })
-  }
+  // Stable callObject from module-level singleton — never recreated
+  const callObject = getCallObject()
 
-  const innerRef = React.useRef<React.ReactElement | null>(null)
+  const innerRef = useRef<React.ReactElement | null>(null)
   if (!innerRef.current) {
     innerRef.current = <CallInner roomId={roomId} onCallEnded={onCallEnded} onRizzMessage={onRizzMessage} />
   }
 
   return (
-    <DailyProvider callObject={callObjectRef.current}>
+    <DailyProvider callObject={callObject}>
       {innerRef.current}
     </DailyProvider>
   )
