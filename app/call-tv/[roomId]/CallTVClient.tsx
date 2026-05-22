@@ -126,15 +126,20 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       if (data?.text) {
         onRizzMessage?.(data.text)
 
-        // Play TTS (Celeste / Orpheus voice)
+        // Play TTS (with WAV format for consistency with RizzPanel)
         const ttsRes = await fetch('/api/tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.text }),
+          body: JSON.stringify({ text: data.text, response_format: 'wav' }),
         })
         if (ttsRes.ok) {
           const blob = await ttsRes.blob()
-          new Audio(URL.createObjectURL(blob)).play()
+          const url = URL.createObjectURL(blob)
+          const audio = new Audio(url)
+          audio.play().catch(e => console.warn('[rizz] audio play failed:', e))
+        } else {
+          const err = await ttsRes.text()
+          console.error('[rizz] tts error:', err)
         }
       }
     } catch (err) {
