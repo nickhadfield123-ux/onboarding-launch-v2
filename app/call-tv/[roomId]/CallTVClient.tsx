@@ -32,7 +32,7 @@ import { Badge } from "@/components/ui/badge"
 import { ParticipantTile } from "@/components/cockpit/ParticipantTile"
 import { RizzTile } from "@/components/RizzTile"
 import { useWakePhraseTrigger } from "@/hooks/useWakePhraseTrigger"
-import { speak } from "@/lib/tts"
+import { speak, initAudio } from "@/lib/tts"
 
 // Module-level singleton for the Daily callObject.
 // This survives React remounts of CallTVClient / the parent page,
@@ -118,12 +118,17 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   // State to track when speech is actually playing (for text visibility)
   const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
 
-  // Wake phrase detection hook with broad pattern and transcript logging
-  const { 
-    triggerDetected: wakePhraseDetected, 
-    transcript: wakePhraseTranscript, 
-    error: wakePhraseError 
-  } = useWakePhraseTrigger(
+  // Audio unlock state
+  const hasUnlockedAudio = React.useRef(false)
+
+// Wake phrase detection hook with broad pattern and transcript logging
+   const { 
+     triggerDetected: wakePhraseDetected, 
+     transcript: wakePhraseTranscript, 
+     error: wakePhraseError,
+     start: startWakePhrase,
+     stop: stopWakePhrase,
+   } = useWakePhraseTrigger(
     async (transcript: string) => {
       console.log('[rizz] wake phrase detected:', transcript)
       
@@ -185,6 +190,21 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }, [roomId, onRizzMessage])
 
+  // Initialize audio context on first user interaction
+  const unlockAudio = React.useCallback(async () => {
+    if (!hasUnlockedAudio.current) {
+      console.log('[rizz] Unlocking audio context...')
+      try {
+        await initAudio()
+        hasUnlockedAudio.current = true
+        console.log('[rizz] Audio context unlocked successfully')
+      } catch (err) {
+        console.warn('[rizz] Audio unlock failed:', err)
+        hasUnlockedAudio.current = true // Still mark as unlocked to avoid retrying
+      }
+    }
+  }, [])
+
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
     hasJoined.current = true
@@ -225,6 +245,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   // Toggle microphone
   const toggleMicrophone = async () => {
+    await unlockAudio()
     if (callObject) {
       const isMuted = callObject.localAudio()
       await callObject.setLocalAudio(!isMuted)
@@ -233,6 +254,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   // Toggle camera
   const toggleCamera = async () => {
+    await unlockAudio()
     if (callObject) {
       const isVideoOff = callObject.localVideo()
       await callObject.setLocalVideo(!isVideoOff)
@@ -241,6 +263,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   // Toggle screen share
   const toggleScreenShare = async () => {
+    await unlockAudio()
     if (!callObject) return
     try {
       if (isLocalSharing) {
@@ -253,14 +276,24 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }
 
-  // Toggle wake phrase listening
-  const toggleWakePhraseListening = () => {
-    setIsWakePhraseListening(!isWakePhraseListening)
-    console.log(`[rizz] Wake phrase listening ${!isWakePhraseListening ? 'started' : 'stopped'}`)
-  }
+// Toggle wake phrase listening
+   const toggleWakePhraseListening = async () => {
+     if (!isWakePhraseListening) {
+       // Start listening: prime audio + start recognition
+       await unlockAudio()
+       startWakePhrase()
+       setIsWakePhraseListening(true)
+       console.log('[rizz] Wake phrase listening started')
+     } else {
+       stopWakePhrase()
+       setIsWakePhraseListening(false)
+       console.log('[rizz] Wake phrase listening stopped')
+     }
+   }
 
   // Handle leave
   const handleLeave = async () => {
+    await unlockAudio()
     await callObject?.leave()
     setIsJoined(false)
     if (onCallEnded) {
@@ -407,10 +440,37 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }, [onCallEnded]))
 
-  useDailyEvent('error', useCallback((e) => {
-    console.log('❌ ERROR EVENT', e)
-    setError(e.errorMsg)
-  }, []))
+useDailyEvent('error', useCallback((e) => {
+     console.log('❌ ERROR EVENT', e)
+     setError(e.errorMsg)
+   }, []))
+
+  // Hidden demo keyboard shortcut: press 'R' to trigger Rizz introduction
+  // Completely invisible - no UI changes, just triggers audio+speech
+  React.useEffect(() => {
+    if (!isJoined) return
+    const handleKeyPress = async (e: KeyboardEvent) => {
+      // 'R' key triggers demo (case-insensitive, no modifier for invisibility)
+      if (e.key.toLowerCase() === 'r' && !e.metaKey && !e.ctrlKey) {
+        console.log('[demo] R key pressed, triggering Rizz intro')
+        if (!hasIntroduced.current) {
+          hasIntroduced.current = true
+          await unlockAudio()
+          setIsSpeechPlaying(true)
+          try {
+            await speak(INTRODUCTION_TEXT)
+          } catch (err) {
+            console.warn('[demo] intro speech failed:', err)
+          } finally {
+            setIsSpeechPlaying(false)
+          }
+          onRizzMessage?.(INTRODUCTION_TEXT)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [isJoined, onRizzMessage, unlockAudio])
 
   return (
     <div className="h-full flex flex-col bg-slate-900">

@@ -269,12 +269,8 @@ export const useWakePhraseTrigger = (
     }
   }, [stop])
 
-  // Initialize recognition when component mounts
-  useEffect(() => {
-    if (isMounted.current) {
-      start()
-    }
-  }, [start])
+  // Note: Removed auto-start - require explicit start() call from user gesture
+  // This ensures audio context can be unlocked before speech recognition begins
 
   return {
     triggerDetected,
