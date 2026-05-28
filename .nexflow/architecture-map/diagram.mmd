@@ -1,0 +1,67 @@
+graph LR
+  subgraph External["External integrations"]
+    ext_daily_co(["Daily.co"])
+    ext_groq(["Groq"])
+    ext_mistral(["Mistral"])
+    ext_supabase(["Supabase"])
+    ext_resend_email(["Resend (email)"])
+    ext_pipecat_audio_pipeline(["Pipecat (audio pipeline)"])
+  end
+  subgraph Stores["Data stores"]
+    store_supabase[("Supabase (Postgres + Auth)")]
+  end
+  subgraph Pages["Next.js pages"]
+    page["Page /"]
+    page_superuser["Page /superuser"]
+    page_v2_room_id["Page /v2/room/[id]"]
+  end
+  subgraph APIs["Next.js API routes"]
+    api_api_ai_chat[/"API /api/ai/chat"/]
+    api_api_auth_get_history[/"API /api/auth/get-history"/]
+    api_api_auth_save_history[/"API /api/auth/save-history"/]
+    api_api_auth_send_magic_link[/"API /api/auth/send-magic-link"/]
+    api_api_chat[/"API /api/chat"/]
+    api_api_rizz_bot_start[/"API /api/rizz-bot/start"/]
+    api_api_rizz_bot_stop[/"API /api/rizz-bot/stop"/]
+    api_api_rizz_bot_summary[/"API /api/rizz-bot/summary"/]
+    api_api_rizz_call_start[/"API /api/rizz-call/start"/]
+    api_api_rizz_call_summary[/"API /api/rizz-call/summary"/]
+    api_api_rizz_context[/"API /api/rizz/context"/]
+    api_api_superuser_git_context[/"API /api/superuser/git-context"/]
+    api_api_superuser_update_prompt[/"API /api/superuser/update-prompt"/]
+    api_api_tts[/"API /api/tts"/]
+  end
+  subgraph Services["Standalone services"]
+    svc_rizz_bot[["rizz-bot (Python)"]]
+    svc_rizz_server[["rizz-server (Node)"]]
+  end
+  api_api_ai_chat --> ext_groq
+  api_api_auth_get_history --> ext_supabase
+  api_api_auth_get_history -->|read/write| store_supabase
+  api_api_auth_save_history --> ext_supabase
+  api_api_auth_save_history -->|read/write| store_supabase
+  api_api_auth_send_magic_link --> ext_resend_email
+  api_api_chat --> ext_supabase
+  api_api_chat -->|read/write| store_supabase
+  api_api_rizz_bot_start --> ext_supabase
+  api_api_rizz_bot_start -->|spawn child process| svc_rizz_bot
+  api_api_rizz_bot_summary --> ext_supabase
+  api_api_rizz_bot_summary -->|read/write| store_supabase
+  api_api_rizz_call_start -->|SSE / REST| svc_rizz_server
+  api_api_rizz_call_summary --> ext_supabase
+  api_api_rizz_call_summary -->|read/write| store_supabase
+  api_api_rizz_call_summary -->|SSE / REST| svc_rizz_server
+  api_api_rizz_context --> ext_supabase
+  api_api_rizz_context -->|read/write| store_supabase
+  api_api_tts --> ext_groq
+  svc_rizz_bot --> ext_daily_co
+  svc_rizz_bot --> ext_groq
+  svc_rizz_bot --> ext_mistral
+  svc_rizz_bot --> ext_supabase
+  svc_rizz_bot --> ext_pipecat_audio_pipeline
+  svc_rizz_bot -->|read/write| store_supabase
+  svc_rizz_server --> ext_daily_co
+  svc_rizz_server --> ext_groq
+  svc_rizz_server --> ext_mistral
+  svc_rizz_server --> ext_supabase
+  svc_rizz_server -->|read/write| store_supabase
