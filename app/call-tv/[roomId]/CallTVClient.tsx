@@ -111,6 +111,10 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   const totalTiles = allIds.length + 1 // +1 for RizzTile
 
+  // First trigger introduction logic
+  const hasIntroduced = React.useRef(false)
+  const INTRODUCTION_TEXT = "Hi! I'm Rizz, and I'm learning alongside Nick and the Resourceful crew how I can best serve the collective. I have context on each person, can provide meeting transcriptions, and offer strategic advice based on everything happening across Resourceful. Beyond that, the sky really is the limit — we can build pretty much anything together!"
+
   // Wake phrase detection hook with broad pattern and transcript logging
   const { 
     triggerDetected: wakePhraseDetected, 
@@ -119,6 +123,36 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   } = useWakePhraseTrigger(
     async (transcript: string) => {
       console.log('[rizz] wake phrase detected:', transcript)
+      
+      // First trigger: send introduction
+      if (!hasIntroduced.current) {
+        hasIntroduced.current = true
+        console.log('[rizz] First trigger - sending introduction')
+        onRizzMessage?.(INTRODUCTION_TEXT)
+        
+        // Play TTS for introduction
+        try {
+          const ttsRes = await fetch('/api/tts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ text: INTRODUCTION_TEXT, response_format: 'wav' }),
+          })
+          if (ttsRes.ok) {
+            const blob = await ttsRes.blob()
+            const url = URL.createObjectURL(blob)
+            const audio = new Audio(url)
+            audio.play().catch(e => console.warn('[rizz] intro audio play failed:', e))
+          } else {
+            const err = await ttsRes.text()
+            console.error('[rizz] intro tts error:', err)
+          }
+        } catch (err) {
+          console.warn('[rizz] intro TTS fetch failed:', err)
+        }
+        return // Skip normal server chat call for intro
+      }
+      
+      // Subsequent triggers: normal conversational mode
       sendToRizz(transcript)
     },
     { 
