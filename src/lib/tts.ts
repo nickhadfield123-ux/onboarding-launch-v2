@@ -40,6 +40,36 @@ export const speak = (text: string, options?: {
   })
 }
 
+function findMaleVoice(): SpeechSynthesisVoice | null {
+  const voices = speechSynthesis.getVoices()
+  
+  // Priority order for male voices
+  const priorityPatterns = [
+    /Google UK English Male/i,
+    /Microsoft.*Male/i,
+    /Male/i,
+    /Daniel/i,
+    /David/i,
+    /James/i,
+    /Ryan/i,
+  ]
+  
+  // Check for exact matches first
+  for (const pattern of priorityPatterns) {
+    const voice = voices.find(v => pattern.test(v.name))
+    if (voice) return voice
+  }
+  
+  // Fallback: look for any male voice
+  const maleVoice = voices.find(v => 
+    v.name.toLowerCase().includes('male') || 
+    v.name.toLowerCase().includes('man')
+  )
+  if (maleVoice) return maleVoice
+  
+  return null
+}
+
 function doSpeak(
   text: string, 
   options: { rate?: number; pitch?: number; volume?: number; lang?: string } = {},
@@ -48,14 +78,27 @@ function doSpeak(
 ): void {
   const utterance = new SpeechSynthesisUtterance(text)
   
+  // Find male voice
+  const maleVoice = findMaleVoice()
+  if (maleVoice) {
+    utterance.voice = maleVoice
+    console.log('[tts] Using male voice:', maleVoice.name)
+  } else {
+    // Fallback: make default voice sound more masculine
+    utterance.pitch = 0.8
+    utterance.rate = 0.95
+    console.log('[tts] No male voice found, using fallback pitch/rate')
+  }
+  
   // Set optional parameters
-  utterance.rate = options.rate ?? 1.0
-  utterance.pitch = options.pitch ?? 1.0
+  utterance.rate = options.rate ?? utterance.rate
+  utterance.pitch = options.pitch ?? utterance.pitch
   utterance.volume = options.volume ?? 1.0
   utterance.lang = options.lang ?? 'en-US'
 
   // Event handlers
   utterance.onend = () => {
+    console.log('[tts] Speech completed')
     resolve()
   }
 
@@ -108,4 +151,11 @@ export const getVoices = (): SpeechSynthesisVoice[] => {
   }
   
   return []
+}
+
+/**
+ * Gets the best male voice available
+ */
+export const getMaleVoice = (): SpeechSynthesisVoice | null => {
+  return findMaleVoice()
 }

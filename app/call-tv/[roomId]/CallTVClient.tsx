@@ -115,6 +115,9 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   const hasIntroduced = React.useRef(false)
   const INTRODUCTION_TEXT = "Hi! I'm Rizz, and I'm learning alongside Nick and the Resourceful crew how I can best serve the collective. I have context on each person, can provide meeting transcriptions, and offer strategic advice based on everything happening across Resourceful. Beyond that, the sky really is the limit — we can build pretty much anything together!"
 
+  // State to track when speech is actually playing (for text visibility)
+  const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
+
   // Wake phrase detection hook with broad pattern and transcript logging
   const { 
     triggerDetected: wakePhraseDetected, 
@@ -128,27 +131,19 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       if (!hasIntroduced.current) {
         hasIntroduced.current = true
         console.log('[rizz] First trigger - sending introduction')
-        onRizzMessage?.(INTRODUCTION_TEXT)
         
-        // Play TTS for introduction
+        // Start speech without showing text initially
+        setIsSpeechPlaying(true)
         try {
-          const ttsRes = await fetch('/api/tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: INTRODUCTION_TEXT, response_format: 'wav' }),
-          })
-          if (ttsRes.ok) {
-            const blob = await ttsRes.blob()
-            const url = URL.createObjectURL(blob)
-            const audio = new Audio(url)
-            audio.play().catch(e => console.warn('[rizz] intro audio play failed:', e))
-          } else {
-            const err = await ttsRes.text()
-            console.error('[rizz] intro tts error:', err)
-          }
+          await speak(INTRODUCTION_TEXT)
         } catch (err) {
-          console.warn('[rizz] intro TTS fetch failed:', err)
+          console.warn('[rizz] intro speech failed:', err)
+        } finally {
+          setIsSpeechPlaying(false)
         }
+        
+        // Show text after speech starts
+        onRizzMessage?.(INTRODUCTION_TEXT)
         return // Skip normal server chat call for intro
       }
       
@@ -172,23 +167,18 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       })
       const data = await res.json()
       if (data?.text) {
-        onRizzMessage?.(data.text)
-
-        // Play TTS (with WAV format for consistency with RizzPanel)
-        const ttsRes = await fetch('/api/tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text: data.text, response_format: 'wav' }),
-        })
-        if (ttsRes.ok) {
-          const blob = await ttsRes.blob()
-          const url = URL.createObjectURL(blob)
-          const audio = new Audio(url)
-          audio.play().catch(e => console.warn('[rizz] audio play failed:', e))
-        } else {
-          const err = await ttsRes.text()
-          console.error('[rizz] tts error:', err)
+        // Start speech without showing text initially
+        setIsSpeechPlaying(true)
+        try {
+          await speak(data.text)
+        } catch (err) {
+          console.warn('[rizz] speech failed:', err)
+        } finally {
+          setIsSpeechPlaying(false)
         }
+        
+        // Show text after speech starts
+        onRizzMessage?.(data.text)
       }
     } catch (err) {
       console.warn('[rizz] voice trigger failed:', err)
@@ -557,7 +547,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
                  {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
                    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
                      <RizzTile 
-                       isSpeaking={rizzLastWords !== ""} 
+                       isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
                        lastWords={rizzLastWords} 
                      />
                   </div>
