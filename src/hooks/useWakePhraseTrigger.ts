@@ -34,11 +34,32 @@ export interface WakePhraseTriggerResult {
 }
 
 const defaultOptions: Required<WakePhraseTriggerOptions> = {
-  pattern: '\\bhey\\s+rizz?\\b',
+  pattern: '\\b(hey|hi|a)\\s+(rizz?|rez|res|chris)\\b|\\bharris\\b',
   lang: 'en-US',
   continuous: true,
   interimResults: false,
   restartTimeout: 10000,
+}
+
+// Levenshtein distance calculation
+function levenshteinDistance(a: string, b: string): number {
+  const matrix = Array(b.length + 1).fill(null).map(() => Array(a.length + 1).fill(null))
+  
+  for (let i = 0; i <= a.length; i += 1) matrix[0][i] = i
+  for (let j = 0; j <= b.length; j += 1) matrix[j][0] = j
+  
+  for (let j = 1; j <= b.length; j += 1) {
+    for (let i = 1; i <= a.length; i += 1) {
+      const indicator = a[i - 1] === b[j - 1] ? 0 : 1
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1, // deletion
+        matrix[j - 1][i] + 1, // insertion
+        matrix[j - 1][i - 1] + indicator, // substitution
+      )
+    }
+  }
+  
+  return matrix[b.length][a.length]
 }
 
 export const useWakePhraseTrigger = (
@@ -120,14 +141,35 @@ export const useWakePhraseTrigger = (
           if (lastResult.isFinal) {
             const transcript = lastResult[0].transcript.trim()
             setTranscript(transcript)
+            console.log('[wake-phrase] heard:', transcript) // Always log transcript
             
             // Check if this matches our wake phrase pattern with stricter validation
-            if (matchesWakePhrase(transcript)) {
+            const isRegexMatch = matchesWakePhraseRegex(transcript)
+            
+            if (isRegexMatch) {
               setTriggerDetected(true)
               onWakePhraseDetected?.(transcript)
               
               // Clear trigger after a short delay so it can be detected again
               setTimeout(() => setTriggerDetected(false), 1000)
+            } else {
+              // Check for fuzzy match with Levenshtein distance
+              const secondWord = extractSecondWord(transcript)
+              const fuzzyMatch = secondWord && levenshteinDistance(secondWord.toLowerCase(), 'rizz') <= 2
+              
+              if (fuzzyMatch) {
+                console.log('[wake-phrase] Fuzzy wake phrase detected:', {
+                  transcript,
+                  secondWord,
+                  distance: levenshteinDistance(secondWord.toLowerCase(), 'rizz'),
+                  reason: 'phonetic match within distance 2'
+                })
+                setTriggerDetected(true)
+                onWakePhraseDetected?.(transcript)
+                
+                // Clear trigger after a short delay so it can be detected again
+                setTimeout(() => setTriggerDetected(false), 1000)
+              }
             }
           }
         }
@@ -138,8 +180,17 @@ export const useWakePhraseTrigger = (
     }
   }, [finalOptions, onWakePhraseDetected, error, isListening])
 
-  // Check if transcript matches wake phrase more strictly
-  const matchesWakePhrase = (text: string): boolean => {
+  // Extract second word from transcript
+  const extractSecondWord = (text: string): string | null => {
+    const words = text.trim().split(/\s+/)
+    if (words.length >= 2) {
+      return words[1]
+    }
+    return null
+  }
+
+  // Check if transcript matches wake phrase with the broad regex
+  const matchesWakePhraseRegex = (text: string): boolean => {
     try {
       const regex = new RegExp(finalOptions.pattern, 'i')
       const match = text.match(regex)
@@ -159,7 +210,7 @@ export const useWakePhraseTrigger = (
       const atWordBoundary = !/[a-zA-Z0-9]/.test(beforeChar) && !/[a-zA-Z0-9]/.test(afterChar)
       
       if (atWordBoundary) {
-        console.log('[wake-phrase] Valid wake phrase detected:', matchedPhrase)
+        console.log('[wake-phrase] Regex wake phrase detected:', matchedPhrase)
         return true
       }
       
@@ -173,7 +224,7 @@ export const useWakePhraseTrigger = (
       
       return false
     } catch (err) {
-      console.error('[wake-phrase] Error matching wake phrase:', err)
+      console.error('[wake-phrase] Error matching wake phrase regex:', err)
       return false
     }
   }

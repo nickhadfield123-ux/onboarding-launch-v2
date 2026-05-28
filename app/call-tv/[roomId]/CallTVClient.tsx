@@ -68,14 +68,9 @@ export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Pro
   // Stable callObject from module-level singleton — never recreated
   const callObject = getCallObject()
 
-  const innerRef = useRef<React.ReactElement | null>(null)
-  if (!innerRef.current) {
-    innerRef.current = <CallInner roomId={roomId} onCallEnded={onCallEnded} onRizzMessage={onRizzMessage} />
-  }
-
   return (
     <DailyProvider callObject={callObject}>
-      {innerRef.current}
+      <CallInner roomId={roomId} onCallEnded={onCallEnded} onRizzMessage={onRizzMessage} />
     </DailyProvider>
   )
 }
@@ -116,7 +111,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   const totalTiles = allIds.length + 1 // +1 for RizzTile
 
-  // Wake phrase detection hook
+  // Wake phrase detection hook with broad pattern and transcript logging
   const { 
     triggerDetected: wakePhraseDetected, 
     transcript: wakePhraseTranscript, 
@@ -126,7 +121,9 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       console.log('[rizz] wake phrase detected:', transcript)
       sendToRizz(transcript)
     },
-    { pattern: '\\bhey\\s+rizz?\\b' } // Listen for "hey rizz" variants
+    { 
+      pattern: '\\b(hey|hi|a)\\s+(rizz?|rez|res|chris)\\b|\\bharris\\b' // Broad pattern as requested
+    }
   )
 
   // Stable send function for voice-triggered Rizz messages
