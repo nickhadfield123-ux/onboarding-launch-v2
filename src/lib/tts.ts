@@ -139,14 +139,13 @@ function findMaleVoice(): SpeechSynthesisVoice | null {
 /**
  * Speaks text using the Web Speech API
  * @param text Text to speak
- * @param options Optional voice configuration and callbacks
+ * @param options Optional voice configuration
  */
 export const speak = (text: string, options?: {
   rate?: number
   pitch?: number
   volume?: number
   lang?: string
-  onProgress?: (displayedText: string) => void
 }): Promise<void> => {
   console.log('[tts] speak() called for text of length', text.length, 'chars')
   
@@ -185,7 +184,7 @@ export const speak = (text: string, options?: {
 
 function doSpeak(
   text: string, 
-  options: { rate?: number; pitch?: number; volume?: number; lang?: string; onProgress?: (displayedText: string) => void } = {},
+  options: { rate?: number; pitch?: number; volume?: number; lang?: string } = {},
   resolve: () => void,
   reject: (reason?: any) => void
 ): void {
@@ -215,9 +214,9 @@ function doSpeak(
   utterance.volume = options.volume ?? 1.0
   utterance.lang = options.lang ?? 'en-US'
 
-  // Event handlers
+// Event handlers
   utterance.onstart = () => {
-    console.log('[tts] Speech started')
+    console.log('[tts] onstart fired')
   }
 
   utterance.onend = () => {
@@ -228,22 +227,6 @@ function doSpeak(
   utterance.onerror = (event) => {
     console.error('[tts] Speech synthesis error:', event.error)
     reject(new Error(`Speech synthesis error: ${event.error}`))
-  }
-
-  // Handle word-by-word text reveal via boundary events
-  if (options.onProgress) {
-    utterance.onboundary = (event) => {
-      if (event.name === 'word') {
-        const displayedText = text.substring(0, event.charIndex + event.charLength)
-        options.onProgress?.(displayedText)
-      }
-    }
-    
-    // Fallback: also fire onstart in case onboundary never fires
-    utterance.onstart = () => {
-      console.log('[tts] Speech started')
-      options.onProgress?.('')
-    }
   }
 
   try {

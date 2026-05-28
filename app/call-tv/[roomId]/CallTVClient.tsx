@@ -138,21 +138,34 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
          hasIntroduced.current = true
          console.log('[rizz] First trigger - sending introduction')
          
-         // Start speech with progressive text reveal
+         // Start speech with progressive text reveal via timer
+         const words = INTRODUCTION_TEXT.split(' ')
+         let wordIndex = 0
          setIsSpeechPlaying(true)
          setDisplayedText("")
+         
+         const revealInterval = setInterval(() => {
+           wordIndex++
+           setDisplayedText(words.slice(0, wordIndex).join(' '))
+           if (wordIndex >= words.length) {
+             clearInterval(revealInterval)
+           }
+         }, 250)
+         
          try {
-           await speak(INTRODUCTION_TEXT, {
-             onProgress: setDisplayedText
-           })
+           await speak(INTRODUCTION_TEXT)
          } catch (err) {
            console.warn('[rizz] intro speech failed:', err)
          } finally {
+           clearInterval(revealInterval)
+           setDisplayedText(INTRODUCTION_TEXT) // Ensure full text shown
            setIsSpeechPlaying(false)
-           setDisplayedText("")
+           
+           // Fade out text after a few seconds
+           setTimeout(() => setDisplayedText(""), 8000)
          }
          
-         // Show full text after speech completes (fallback sync)
+         // Show full text after speech starts
          onRizzMessage?.(INTRODUCTION_TEXT)
          return // Skip normal server chat call for intro
        }
@@ -177,27 +190,38 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
        })
        const data = await res.json()
        if (data?.text) {
-         // Start speech with progressive text reveal
+         // Start speech with progressive text reveal via timer
+         const words = data.text.split(' ')
+         let wordIndex = 0
          setIsSpeechPlaying(true)
          setDisplayedText("")
+         
+         const revealInterval = setInterval(() => {
+           wordIndex++
+           setDisplayedText(words.slice(0, wordIndex).join(' '))
+           if (wordIndex >= words.length) {
+             clearInterval(revealInterval)
+           }
+         }, 250)
+         
          try {
-           await speak(data.text, {
-             onProgress: setDisplayedText
-           })
+           await speak(data.text)
          } catch (err) {
            console.warn('[rizz] speech failed:', err)
          } finally {
+           clearInterval(revealInterval)
+           setDisplayedText(data.text) // Ensure full text shown
            setIsSpeechPlaying(false)
          }
          
-// Show full text after speech completes (fallback sync)
-          onRizzMessage?.(data.text)
-          setDisplayedText("") // Reset displayed text
-        }
-      } catch (err) {
-        console.warn('[rizz] voice trigger failed:', err)
-      }
-    }, [roomId, onRizzMessage, setDisplayedText])
+         // Show full text after speech starts
+         onRizzMessage?.(data.text)
+         setDisplayedText("") // Reset displayed text
+       }
+     } catch (err) {
+       console.warn('[rizz] voice trigger failed:', err)
+     }
+   }, [roomId, onRizzMessage])
 
   // Initialize audio context on first user interaction
   const unlockAudio = React.useCallback(async () => {
@@ -465,17 +489,32 @@ useDailyEvent('error', useCallback((e) => {
         if (!hasIntroduced.current) {
           hasIntroduced.current = true
           await unlockAudio()
+          
+          // Timer-based word reveal
+          const words = INTRODUCTION_TEXT.split(' ')
+          let wordIndex = 0
           setIsSpeechPlaying(true)
           setDisplayedText("")
+          
+          const revealInterval = setInterval(() => {
+            wordIndex++
+            setDisplayedText(words.slice(0, wordIndex).join(' '))
+            if (wordIndex >= words.length) {
+              clearInterval(revealInterval)
+            }
+          }, 250)
+          
           try {
-            await speak(INTRODUCTION_TEXT, {
-              onProgress: setDisplayedText
-            })
+            await speak(INTRODUCTION_TEXT)
           } catch (err) {
             console.warn('[demo] intro speech failed:', err)
           } finally {
+            clearInterval(revealInterval)
+            setDisplayedText(INTRODUCTION_TEXT) // Ensure full text shown
             setIsSpeechPlaying(false)
-            setDisplayedText("")
+            
+            // Fade out text after a few seconds
+            setTimeout(() => setDisplayedText(""), 8000)
           }
           onRizzMessage?.(INTRODUCTION_TEXT)
         }
