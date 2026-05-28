@@ -1,0 +1,62 @@
+name: nexflow-nightly-screenshots
+
+on:
+  schedule:
+    # 07:30 UTC every day, which is 00:30 PT.
+    - cron: "30 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    name: Capture page snapshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: .nexflow/page-snapshots/requirements-screenshot.txt
+
+      - name: Install Python dependencies
+        run: pip install -r .nexflow/page-snapshots/requirements-screenshot.txt
+
+      - name: Install Chromium for Playwright
+        run: python -m playwright install --with-deps chromium
+
+      - name: Compute capture date
+        id: date
+        run: echo "value=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+
+      - name: Run screenshot capture
+        run: python .nexflow/page-snapshots/screenshot.py --date "${{ steps.date.outputs.value }}"
+
+      - name: Summary
+        if: always()
+        run: |
+          DAY_DIR=".nexflow/page-snapshots/snapshots/${{ steps.date.outputs.value }}"
+          if [ -f "$DAY_DIR/manifest.json" ]; then
+            TOTAL=$(python -c "import json,sys; m=json.load(open('$DAY_DIR/manifest.json')); print(m['summary']['total'])")
+            OK=$(python -c "import json,sys; m=json.load(open('$DAY_DIR/manifest.json')); print(m['summary']['ok'])")
+            ERR=$(python -c "import json,sys; m=json.load(open('$DAY_DIR/manifest.json')); print(m['summary']['error'])")
+            echo "nexflow-nightly-screenshots: ${OK}/${TOTAL} captured, ${ERR} failed"
+          else
+            echo "nexflow-nightly-screenshots: no manifest produced"
+          fi
+
+      - name: Upload snapshots as workflow artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: page-snapshots-${{ steps.date.outputs.value }}
+          path: .nexflow/page-snapshots/snapshots/${{ steps.date.outputs.value }}/
+          if-no-files-found: warn
+          retention-days: 30

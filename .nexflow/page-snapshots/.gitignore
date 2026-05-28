@@ -1,0 +1,5 @@
+# Captured snapshots are uploaded as workflow artifacts, never committed.
+snapshots/
+__pycache__/
+*.pyc
+.pytest_cache/
