@@ -21,6 +21,7 @@ export default function RoomV2Page() {
   const [callDuration, setCallDuration] = React.useState(120)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = React.useState(true)
   const [rizzMessage, setRizzMessage] = React.useState<string>('')
+   const [rizzProgress, setRizzProgress] = React.useState<string>('')
   
   // Reset sidebar expanded state when transitioning between states
   React.useEffect(() => {
@@ -84,10 +85,10 @@ export default function RoomV2Page() {
         expanded: leftSidebarExpanded,
         onToggle: () => setLeftSidebarExpanded(prev => !prev)
       }}
-      rightSidebar={{
-        content: <RizzPanel incomingMessage={rizzMessage} roomId={roomId} />,
-        defaultExpanded: true
-      }}
+rightSidebar={{
+         content: <RizzPanel incomingMessage={rizzMessage} inProgressMessage={rizzProgress} roomId={roomId} />,
+         defaultExpanded: true
+       }}
     >
       {callHasEnded ? (
         <div className="p-6 h-full overflow-auto bg-slate-900">
@@ -115,11 +116,12 @@ export default function RoomV2Page() {
       ) : (
         <>
           {console.log('✅ 🔥 CALLTVCLIENT IS ACTUALLY BEING RENDERED RIGHT NOW!')}
-          <CallTVClient
-            roomId={roomId}
-            onCallEnded={handleCallEnded}
-            onRizzMessage={setRizzMessage}
-          />
+<CallTVClient
+             roomId={roomId}
+             onCallEnded={handleCallEnded}
+             onRizzMessage={setRizzMessage}
+             onRizzProgress={setRizzProgress}
+           />
         </>
       )}
     </PlatformFrame>

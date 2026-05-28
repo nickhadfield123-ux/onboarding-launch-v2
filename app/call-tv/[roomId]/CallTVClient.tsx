@@ -60,6 +60,7 @@ interface Props {
   roomId: string
   onCallEnded?: (duration: number, participantCount: number) => void
   onRizzMessage?: (text: string) => void
+  onRizzProgress?: (text: string) => void
 }
 
 export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Props) {
@@ -75,8 +76,8 @@ export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Pro
   )
 }
 
-function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
-  console.log('🔵 CallInner IS MOUNTING')
+function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props) {
+   console.log('🔵 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
   const hasJoined = React.useRef(false)
@@ -115,12 +116,11 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   const hasIntroduced = React.useRef(false)
   const INTRODUCTION_TEXT = "Hi! I'm Rizz, and I'm learning alongside Nick and the Resourceful crew how I can best serve the collective. I have context on each person, can provide meeting transcriptions, and offer strategic advice based on everything happening across Resourceful. Beyond that, the sky really is the limit — we can build pretty much anything together!"
 
-  // State to track when speech is actually playing (for text visibility)
-  const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
-  const [displayedText, setDisplayedText] = React.useState<string>("")
+// State to track when speech is actually playing (for avatar animation)
+   const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
 
-  // Audio unlock state
-  const hasUnlockedAudio = React.useRef(false)
+   // Audio unlock state
+   const hasUnlockedAudio = React.useRef(false)
 
 // Wake phrase detection hook with broad pattern and transcript logging
    const { 
@@ -141,12 +141,11 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
          // Start speech with progressive text reveal via timer
          const words = INTRODUCTION_TEXT.split(' ')
          let wordIndex = 0
-         setIsSpeechPlaying(true)
-         setDisplayedText("")
+         onRizzProgress?.("")
          
          const revealInterval = setInterval(() => {
            wordIndex++
-           setDisplayedText(words.slice(0, wordIndex).join(' '))
+           onRizzProgress?.(words.slice(0, wordIndex).join(' '))
            if (wordIndex >= words.length) {
              clearInterval(revealInterval)
            }
@@ -158,21 +157,17 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
            console.warn('[rizz] intro speech failed:', err)
          } finally {
            clearInterval(revealInterval)
-           setDisplayedText(INTRODUCTION_TEXT) // Ensure full text shown
            setIsSpeechPlaying(false)
-           
-           // Fade out text after a few seconds
-           setTimeout(() => setDisplayedText(""), 8000)
          }
          
          // Show full text after speech starts
          onRizzMessage?.(INTRODUCTION_TEXT)
          return // Skip normal server chat call for intro
        }
-      
-      // Subsequent triggers: normal conversational mode
-      sendToRizz(transcript)
-    },
+       
+       // Subsequent triggers: normal conversational mode
+       sendToRizz(transcript)
+     },
     { 
       pattern: '\\b(hey|hi|a)\\s+(rizz?|rez|res|chris)\\b|\\bharris\\b' // Broad pattern as requested
     }
@@ -194,11 +189,11 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
          const words = data.text.split(' ')
          let wordIndex = 0
          setIsSpeechPlaying(true)
-         setDisplayedText("")
+         onRizzProgress?.("")
          
          const revealInterval = setInterval(() => {
            wordIndex++
-           setDisplayedText(words.slice(0, wordIndex).join(' '))
+           onRizzProgress?.(words.slice(0, wordIndex).join(' '))
            if (wordIndex >= words.length) {
              clearInterval(revealInterval)
            }
@@ -210,18 +205,16 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
            console.warn('[rizz] speech failed:', err)
          } finally {
            clearInterval(revealInterval)
-           setDisplayedText(data.text) // Ensure full text shown
            setIsSpeechPlaying(false)
          }
          
          // Show full text after speech starts
          onRizzMessage?.(data.text)
-         setDisplayedText("") // Reset displayed text
        }
      } catch (err) {
        console.warn('[rizz] voice trigger failed:', err)
      }
-   }, [roomId, onRizzMessage])
+   }, [roomId, onRizzMessage, onRizzProgress])
 
   // Initialize audio context on first user interaction
   const unlockAudio = React.useCallback(async () => {
@@ -494,11 +487,11 @@ useDailyEvent('error', useCallback((e) => {
           const words = INTRODUCTION_TEXT.split(' ')
           let wordIndex = 0
           setIsSpeechPlaying(true)
-          setDisplayedText("")
+          onRizzProgress?.("")
           
           const revealInterval = setInterval(() => {
             wordIndex++
-            setDisplayedText(words.slice(0, wordIndex).join(' '))
+            onRizzProgress?.(words.slice(0, wordIndex).join(' '))
             if (wordIndex >= words.length) {
               clearInterval(revealInterval)
             }
@@ -510,11 +503,7 @@ useDailyEvent('error', useCallback((e) => {
             console.warn('[demo] intro speech failed:', err)
           } finally {
             clearInterval(revealInterval)
-            setDisplayedText(INTRODUCTION_TEXT) // Ensure full text shown
             setIsSpeechPlaying(false)
-            
-            // Fade out text after a few seconds
-            setTimeout(() => setDisplayedText(""), 8000)
           }
           onRizzMessage?.(INTRODUCTION_TEXT)
         }
@@ -522,7 +511,7 @@ useDailyEvent('error', useCallback((e) => {
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
-  }, [isJoined, onRizzMessage, unlockAudio])
+  }, [isJoined, onRizzMessage, onRizzProgress, unlockAudio])
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
@@ -634,7 +623,6 @@ useDailyEvent('error', useCallback((e) => {
                     <RizzTile 
                       isSpeaking={rizzLastWords !== ""} 
                       lastWords={rizzLastWords}
-                      displayedText={isSpeechPlaying ? displayedText : undefined}
                     />
                  </div>
               </div>
@@ -657,14 +645,13 @@ useDailyEvent('error', useCallback((e) => {
                    isLocal={id === localSessionId}
                  />
                 ))}
-                 {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
-                   <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
-<RizzTile 
-                      isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
-                      lastWords={rizzLastWords}
-                      displayedText={displayedText} 
-                    />
-                  </div>
+{/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
+                    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
+                      <RizzTile 
+                        isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
+                        lastWords={rizzLastWords}
+                      />
+                    </div>
               </div>
            )}
 

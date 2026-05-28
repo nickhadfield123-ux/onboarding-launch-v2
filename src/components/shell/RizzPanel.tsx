@@ -11,23 +11,57 @@ interface Message {
 
 interface RizzPanelProps {
   incomingMessage?: string   // SSE rizz_message drops in here
+  inProgressMessage?: string // Real-time word-by-word text reveal
   roomId?: string
 }
 
-export function RizzPanel({ incomingMessage, roomId }: RizzPanelProps) {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'rizz', text: "I'm Rizz. Say my name on the call or type here.", ts: Date.now() }
-  ])
-  const [input, setInput] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
-  const lastIncoming = useRef<string>('')
+export function RizzPanel({ incomingMessage, inProgressMessage, roomId }: RizzPanelProps) {
+   const [messages, setMessages] = useState<Message[]>([
+     { role: 'rizz', text: "I'm Rizz. Say my name on the call or type here.", ts: Date.now() }
+   ])
+   const [input, setInput] = useState('')
+   const bottomRef = useRef<HTMLDivElement>(null)
+   const lastIncoming = useRef<string>('')
+   const lastInProgress = useRef<string>('')
+   const placeholderAdded = useRef(false)
 
-  // When a new SSE message arrives, add it as a Rizz bubble
-  useEffect(() => {
-    if (!incomingMessage || incomingMessage === lastIncoming.current) return
-    lastIncoming.current = incomingMessage
-    setMessages(prev => [...prev, { role: 'rizz', text: incomingMessage, ts: Date.now() }])
-  }, [incomingMessage])
+   // When a new SSE message arrives, add it as a Rizz bubble
+   useEffect(() => {
+     if (!incomingMessage || incomingMessage === lastIncoming.current) return
+     lastIncoming.current = incomingMessage
+     placeholderAdded.current = false // Reset placeholder flag when full message arrives
+     setMessages(prev => [...prev, { role: 'rizz', text: incomingMessage, ts: Date.now() }])
+   }, [incomingMessage])
+
+   // When speech is in progress, update the last Rizz bubble with the progressive reveal
+   useEffect(() => {
+     if (!inProgressMessage) return
+     
+     // Add a placeholder bubble when speech starts (empty text)
+     if (inProgressMessage === "" && !placeholderAdded.current) {
+       placeholderAdded.current = true
+       setMessages(prev => {
+         // Check if we already have a placeholder being updated
+         for (let i = prev.length - 1; i >= 0; i--) {
+           if (prev[i].role === 'rizz' && prev[i].text === "") return prev
+         }
+         return [...prev, { role: 'rizz', text: "", ts: Date.now() }]
+       })
+       return
+     }
+     
+     // Update the placeholder with progressive text
+     setMessages(prev => {
+       for (let i = prev.length - 1; i >= 0; i--) {
+         if (prev[i].role === 'rizz') {
+           const updated = [...prev]
+           updated[i] = { ...updated[i], text: inProgressMessage }
+           return updated
+         }
+       }
+       return prev
+     })
+   }, [inProgressMessage])
 
   // Auto-scroll
   useEffect(() => {
