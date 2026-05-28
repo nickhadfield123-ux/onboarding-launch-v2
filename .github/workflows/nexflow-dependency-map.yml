@@ -1,0 +1,107 @@
+name: nexflow-dependency-map
+
+# Regenerates the dependency and integration map.
+#
+# Triggers:
+#   - push to main (when manifests or source change)
+#   - weekly schedule (Sunday 09:00 UTC)
+#   - manual via workflow_dispatch
+#
+# Behaviour:
+#   - Runs the extractor and the pytest suite.
+#   - If the generated INTEGRATIONS.md or INTEGRATIONS.json differs from what
+#     is committed, opens a draft pull request via peter-evans/create-pull-request@v7.
+#   - Otherwise exits clean.
+#
+# Operational addition. Does not touch Next.js source.
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 9 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerate-map:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pytest ruff
+
+      - name: Lint extractor
+        run: python -m ruff check .nexflow/dependency-map/
+
+      - name: Run extractor tests
+        run: python -m pytest .nexflow/dependency-map/ -v
+
+      - name: Regenerate integration map
+        run: |
+          python .nexflow/dependency-map/extract.py \
+            --root . \
+            --output .nexflow/dependency-map/output \
+            --markdown INTEGRATIONS.md
+
+      - name: Detect drift
+        id: drift
+        run: |
+          if [ -n "$(git status --porcelain INTEGRATIONS.md .nexflow/dependency-map/output)" ]; then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            echo "Drift detected. A draft PR will be opened."
+          else
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+            echo "No drift. Integration map is up to date."
+          fi
+
+      - name: Open draft PR with regenerated map
+        if: steps.drift.outputs.drift == 'true' && github.event_name != 'pull_request'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: regenerate dependency and integration map"
+          title: "chore: refresh dependency and integration map"
+          body: |
+            ## Summary
+
+            The `nexflow-dependency-map` workflow detected drift between the
+            committed integration map and the current state of the repository.
+            This pull request refreshes `INTEGRATIONS.md` and
+            `.nexflow/dependency-map/output/INTEGRATIONS.json`.
+
+            ## Triggered by
+
+            - Workflow: `nexflow-dependency-map`
+            - Event: `${{ github.event_name }}`
+            - Commit: `${{ github.sha }}`
+
+            ## Review checklist
+
+            - [ ] Confirm any newly detected service is expected.
+            - [ ] Confirm any removed service is actually gone.
+            - [ ] Note any environment variables that only live in CI or in
+                  the Vercel dashboard. Those will never be picked up by the
+                  source scan.
+
+            This PR is opened as a draft. Please do not merge until a human
+            has reviewed.
+          branch: nexflow/integration-map-refresh
+          base: main
+          draft: true
+          labels: |
+            nexflow
+            dependency-map
+          delete-branch: true
