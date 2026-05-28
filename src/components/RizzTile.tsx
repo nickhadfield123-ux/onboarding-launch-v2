@@ -5,9 +5,10 @@ import React from "react"
 interface RizzTileProps {
   isSpeaking: boolean
   lastWords: string
+  displayedText?: string
 }
 
-export function RizzTile({ isSpeaking, lastWords }: RizzTileProps) {
+export function RizzTile({ isSpeaking, lastWords, displayedText }: RizzTileProps) {
   const gradientId = "rizz-ig"
 
   return (
@@ -105,9 +106,9 @@ export function RizzTile({ isSpeaking, lastWords }: RizzTileProps) {
         </svg>
       </div>
       <div className="mt-2 text-xs font-semibold text-white tracking-wide">Rizz</div>
-      <div className="text-[10px] text-slate-400 mt-0.5 text-center truncate max-w-[90px] h-3">
-        {lastWords || "Listening..."}
-      </div>
+<div className="text-[10px] text-slate-400 mt-0.5 text-center truncate max-w-[90px] h-3">
+         {displayedText !== undefined ? displayedText || "Listening..." : (lastWords || "Listening...")}
+       </div>
     </div>
   )
 }

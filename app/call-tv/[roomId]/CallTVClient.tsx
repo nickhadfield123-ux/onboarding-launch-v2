@@ -117,6 +117,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
 
   // State to track when speech is actually playing (for text visibility)
   const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
+  const [displayedText, setDisplayedText] = React.useState<string>("")
 
   // Audio unlock state
   const hasUnlockedAudio = React.useRef(false)
@@ -132,25 +133,29 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     async (transcript: string) => {
       console.log('[rizz] wake phrase detected:', transcript)
       
-      // First trigger: send introduction
-      if (!hasIntroduced.current) {
-        hasIntroduced.current = true
-        console.log('[rizz] First trigger - sending introduction')
-        
-        // Start speech without showing text initially
-        setIsSpeechPlaying(true)
-        try {
-          await speak(INTRODUCTION_TEXT)
-        } catch (err) {
-          console.warn('[rizz] intro speech failed:', err)
-        } finally {
-          setIsSpeechPlaying(false)
-        }
-        
-        // Show text after speech starts
-        onRizzMessage?.(INTRODUCTION_TEXT)
-        return // Skip normal server chat call for intro
-      }
+// First trigger: send introduction
+       if (!hasIntroduced.current) {
+         hasIntroduced.current = true
+         console.log('[rizz] First trigger - sending introduction')
+         
+         // Start speech with progressive text reveal
+         setIsSpeechPlaying(true)
+         setDisplayedText("")
+         try {
+           await speak(INTRODUCTION_TEXT, {
+             onProgress: setDisplayedText
+           })
+         } catch (err) {
+           console.warn('[rizz] intro speech failed:', err)
+         } finally {
+           setIsSpeechPlaying(false)
+           setDisplayedText("")
+         }
+         
+         // Show full text after speech completes (fallback sync)
+         onRizzMessage?.(INTRODUCTION_TEXT)
+         return // Skip normal server chat call for intro
+       }
       
       // Subsequent triggers: normal conversational mode
       sendToRizz(transcript)
@@ -160,35 +165,39 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   )
 
-  // Stable send function for voice-triggered Rizz messages
-  const sendToRizz = React.useCallback(async (message: string) => {
-    const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
-    if (!rizzUrl) return
-    try {
-      const res = await fetch(`${rizzUrl.replace(/\/$/, '')}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ roomId, message, speaker: 'User' }),
-      })
-      const data = await res.json()
-      if (data?.text) {
-        // Start speech without showing text initially
-        setIsSpeechPlaying(true)
-        try {
-          await speak(data.text)
-        } catch (err) {
-          console.warn('[rizz] speech failed:', err)
-        } finally {
-          setIsSpeechPlaying(false)
+// Stable send function for voice-triggered Rizz messages
+   const sendToRizz = React.useCallback(async (message: string) => {
+     const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
+     if (!rizzUrl) return
+     try {
+       const res = await fetch(`${rizzUrl.replace(/\/$/, '')}/chat`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ roomId, message, speaker: 'User' }),
+       })
+       const data = await res.json()
+       if (data?.text) {
+         // Start speech with progressive text reveal
+         setIsSpeechPlaying(true)
+         setDisplayedText("")
+         try {
+           await speak(data.text, {
+             onProgress: setDisplayedText
+           })
+         } catch (err) {
+           console.warn('[rizz] speech failed:', err)
+         } finally {
+           setIsSpeechPlaying(false)
+         }
+         
+// Show full text after speech completes (fallback sync)
+          onRizzMessage?.(data.text)
+          setDisplayedText("") // Reset displayed text
         }
-        
-        // Show text after speech starts
-        onRizzMessage?.(data.text)
+      } catch (err) {
+        console.warn('[rizz] voice trigger failed:', err)
       }
-    } catch (err) {
-      console.warn('[rizz] voice trigger failed:', err)
-    }
-  }, [roomId, onRizzMessage])
+    }, [roomId, onRizzMessage, setDisplayedText])
 
   // Initialize audio context on first user interaction
   const unlockAudio = React.useCallback(async () => {
@@ -457,12 +466,16 @@ useDailyEvent('error', useCallback((e) => {
           hasIntroduced.current = true
           await unlockAudio()
           setIsSpeechPlaying(true)
+          setDisplayedText("")
           try {
-            await speak(INTRODUCTION_TEXT)
+            await speak(INTRODUCTION_TEXT, {
+              onProgress: setDisplayedText
+            })
           } catch (err) {
             console.warn('[demo] intro speech failed:', err)
           } finally {
             setIsSpeechPlaying(false)
+            setDisplayedText("")
           }
           onRizzMessage?.(INTRODUCTION_TEXT)
         }
@@ -575,15 +588,16 @@ useDailyEvent('error', useCallback((e) => {
                   </div>
                 ))}
                 
-                {/* Rizz always visible in strip during screenshare */}
-                <div className="relative w-24 h-16 bg-slate-800 rounded-lg 
-                                overflow-hidden shrink-0 flex items-center 
-                                justify-center">
-                   <RizzTile 
-                     isSpeaking={rizzLastWords !== ""} 
-                     lastWords={rizzLastWords} 
-                   />
-                </div>
+{/* Rizz always visible in strip during screenshare */}
+                 <div className="relative w-24 h-16 bg-slate-800 rounded-lg 
+                                 overflow-hidden shrink-0 flex items-center 
+                                 justify-center">
+                    <RizzTile 
+                      isSpeaking={rizzLastWords !== ""} 
+                      lastWords={rizzLastWords}
+                      displayedText={isSpeechPlaying ? displayedText : undefined}
+                    />
+                 </div>
               </div>
 
             </div>
@@ -606,10 +620,11 @@ useDailyEvent('error', useCallback((e) => {
                 ))}
                  {/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
                    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
-                     <RizzTile 
-                       isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
-                       lastWords={rizzLastWords} 
-                     />
+<RizzTile 
+                      isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
+                      lastWords={rizzLastWords}
+                      displayedText={displayedText} 
+                    />
                   </div>
               </div>
            )}
