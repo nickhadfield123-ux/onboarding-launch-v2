@@ -1,0 +1,731 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1322;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;height:100vh;width:100vw}
+
+@keyframes rp{0%,100%{opacity:.25;transform:translate(-50%,-50%) scale(1)}50%{opacity:.6;transform:translate(-50%,-50%) scale(1.04)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ebl{0%,88%,100%{transform:scaleY(1)}94%{transform:scaleY(.06)}}
+@keyframes antb{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave-idle{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave-conjure{0%{transform:rotate(-22deg)}25%{transform:rotate(30deg) translateY(-10px)}50%{transform:rotate(-15deg) translateY(-6px)}75%{transform:rotate(25deg) translateY(-8px)}100%{transform:rotate(-15deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes conjureRing{0%{transform:translate(-50%,-50%) scale(.2);opacity:.8}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}
+@keyframes sparkOut{0%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}35%{opacity:1;transform:translate(calc(var(--sx)*1.8),calc(var(--sy)*1.8)) scale(1)}100%{opacity:0;transform:translate(calc(var(--sx)*3),calc(var(--sy)*3)) scale(0)}}
+@keyframes panelReveal{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cardStagger{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rizz-lean{0%{transform:translateX(0) rotate(0deg)}30%{transform:translateX(-8px) rotate(-4deg)}60%{transform:translateX(-4px) rotate(-2deg)}100%{transform:translateX(0) rotate(0deg)}}
+@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(108,66,194,.3))}50%{filter:drop-shadow(0 0 20px rgba(108,66,194,.7)) drop-shadow(0 0 12px rgba(45,158,107,.4))}}
+@keyframes glowConjure{0%{filter:drop-shadow(0 0 6px rgba(108,66,194,.2))}25%{filter:drop-shadow(0 0 36px rgba(108,66,194,1)) drop-shadow(0 0 24px rgba(45,158,107,.9))}100%{filter:drop-shadow(0 0 8px rgba(108,66,194,.3)}}
+
+.scene{width:100vw;height:100vh;display:flex;flex-direction:column}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:.5px solid rgba(255,255,255,.05);flex-shrink:0}
+.tpill{font-size:10px;padding:3px 10px;border-radius:14px;border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.35);background:none;cursor:pointer;transition:all .2s}
+.tpill:hover{border-color:rgba(127,119,221,.4);color:#AFA9EC;background:rgba(127,119,221,.08)}
+.tpill.live{border-color:rgba(29,158,117,.3);color:#5DCAA5}
+.tpill.active{border-color:rgba(127,119,221,.6);color:#CECBF6;background:rgba(127,119,221,.18);font-weight:500}
+
+/* main stage: panel + rizz col side by side */
+.stage{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* LEFT PANEL */
+.lpanel{flex-shrink:0;width:0;overflow:hidden;background:#090f1c;border-right:.5px solid rgba(255,255,255,.05);display:flex;flex-direction:column;transition:width .7s cubic-bezier(.4,0,.15,1);position:relative}
+.lpanel.open{width:52%}
+.lp-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:.5px solid rgba(255,255,255,.06);flex-shrink:0}
+.lp-section-id{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:rgba(255,255,255,.8)}
+.lp-section-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(127,119,221,.15);color:#AFA9EC;flex-shrink:0}
+.lp-back{font-size:10px;color:rgba(255,255,255,.25);background:none;border:none;cursor:pointer;padding:3px 9px;border-radius:6px;display:flex;align-items:center;gap:3px;transition:color .15s}
+.lp-back:hover{color:rgba(255,255,255,.65)}
+.lp-body{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;animation:panelReveal .4s ease-out .1s both}
+.lp-body::-webkit-scrollbar{width:2px}
+.lp-body::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+.lp-footer{flex-shrink:0;border-top:.5px solid rgba(255,255,255,.05);padding:8px 12px;font-size:10px;color:rgba(255,255,255,.2);display:flex;align-items:center;gap:5px}
+.lp-footer-dot{width:4px;height:4px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+
+/* cards */
+.card{background:#111827;border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;opacity:0;animation:cardStagger .35s ease-out forwards}
+.card.hl{border-color:rgba(127,119,221,.2)}
+.card.gr{border-color:rgba(29,158,117,.16)}
+.card-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.card-t{font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+.card-s{font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;line-height:1.45}
+.badge{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge.g{background:rgba(29,158,117,.14);color:#5DCAA5;border:.5px solid rgba(29,158,117,.2)}
+.badge.p{background:rgba(127,119,221,.14);color:#AFA9EC;border:.5px solid rgba(127,119,221,.2)}
+.card-action{font-size:10px;padding:4px 10px;border-radius:14px;border:.5px solid rgba(127,119,221,.22);color:#AFA9EC;background:none;cursor:pointer;margin-top:6px;transition:all .15s;display:inline-block}
+.card-action:hover{background:rgba(127,119,221,.1);border-color:rgba(127,119,221,.4)}
+.rizz-note{background:rgba(83,74,183,.1);border:.5px solid rgba(127,119,221,.2);border-radius:7px;padding:7px 10px;font-size:11px;color:rgba(255,255,255,.5);line-height:1.55;display:flex;gap:6px;margin-top:7px}
+.rizz-note-dot{width:14px;height:14px;border-radius:50%;background:rgba(83,74,183,.3);border:.5px solid rgba(127,119,221,.4);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#AFA9EC}
+
+/* === WATCH SECTION PANEL (dark, transparent cards) === */
+.watch-panel{display:flex;flex-direction:column;gap:8px}
+.watch-featured{margin-bottom:2px}
+.watch-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.w-card{background:rgba(255,255,255,.035);border:1px solid rgba(127,119,221,.2);border-radius:8px;overflow:hidden;position:relative;transition:border-color .15s,box-shadow .15s}
+.w-card:hover{border-color:rgba(127,119,221,.45);box-shadow:0 0 0 1px rgba(127,119,221,.35),0 4px 18px rgba(83,74,183,.2)}
+.w-thumb{position:relative;width:100%;padding-bottom:56.25%;background:#0a0e1a;overflow:hidden}
+.w-thumb img,.w-thumb video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.w-thumb.pdf-thumb{display:flex;align-items:center;justify-content:center;flex-direction:column;background:#111827}
+.pdf-icon{font-size:26px;line-height:1;opacity:.85}
+.slide-badge{position:absolute;bottom:4px;right:4px;font-size:8px;background:rgba(0,0,0,.65);color:#ddd;padding:1px 5px;border-radius:3px}
+.play-pill{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(127,119,221,.92);color:#fff;font-size:10px;width:22px;height:22px;border-radius:999px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 0 10px rgba(127,119,221,.18);transition:transform .18s ease,box-shadow .18s}
+.w-card:hover .play-pill{transform:translate(-50%,-50%) scale(1.18);box-shadow:0 0 0 12px rgba(127,119,221,.28)}
+.dur-badge{position:absolute;bottom:4px;right:4px;font-size:9px;background:rgba(0,0,0,.72);color:#e0e0e0;padding:1px 5px;border-radius:3px;font-variant-numeric:tabular-nums}
+.w-meta{padding:6px 8px 5px;display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
+.w-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.88);line-height:1.3}
+.w-sub{font-size:9px;color:rgba(255,255,255,.38);margin-top:1px}
+.w-actions{position:absolute;top:5px;right:5px;display:flex;gap:4px;z-index:2}
+.w-max,.w-open-btn{font-size:9px;padding:1px 5px;border-radius:4px;border:0;background:rgba(0,0,0,.45);color:#AFA9EC;cursor:pointer;opacity:.75;transition:all .12s;line-height:1}
+.w-max:hover,.w-open-btn:hover{opacity:1;background:rgba(127,119,221,.35);color:#fff}
+.watch-divider{font-size:9px;text-transform:uppercase;letter-spacing:.08em;color:rgba(255,255,255,.32);padding:5px 2px 1px 2px;border-bottom:0.5px solid rgba(255,255,255,.07);margin:3px 0 1px}
+
+/* Watch maximise overlay (covers entire lpanel) */
+.watch-overlay{position:absolute;inset:0;background:#080c18;z-index:95;display:flex;flex-direction:column}
+.watch-overlay-close{position:absolute;top:6px;right:8px;font-size:20px;line-height:1;color:rgba(255,255,255,.7);background:none;border:none;cursor:pointer;z-index:10;padding:2px 6px}
+.watch-overlay-close:hover{color:#fff}
+.watch-overlay-content{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.watch-overlay-content iframe{width:100%;height:100%;border:0;background:#000}
+.watch-overlay-footer{flex-shrink:0;padding:8px 12px;border-top:.5px solid rgba(255,255,255,.06);display:flex;justify-content:flex-end}
+.watch-overlay-footer .w-open-btn{padding:4px 10px;font-size:10px;background:rgba(127,119,221,.2);color:#AFA9EC}
+
+ /* RIZZ MAIN — new centered layout container */
+.rizz-main{flex:1;display:flex;flex-direction:column;min-width:180px;overflow:hidden;position:relative}
+
+/* Rizz avatar — upper portion, centred */
+.rizz-stage{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0 4px;position:relative}
+.rizz-rings{position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none}
+.rizz-rings div{position:absolute;border-radius:50%;border:1px solid rgba(127,119,221,.14);transform:translate(-50%,-50%)}
+.rizz-anchor{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;z-index:2}
+.rizz-anchor.lean{animation:rizz-lean .9s ease-out forwards}
+.rizz-glow{animation:glowPulse 3s ease-in-out infinite,bob 2.8s ease-in-out infinite}
+.rizz-glow.conjuring{animation:glowConjure 1s ease-out,bob 2.8s ease-in-out 1s infinite}
+.rizz-lbl{font-size:11px;font-weight:500;color:rgba(127,119,221,.75);letter-spacing:.02em}
+.rizz-st{font-size:10px;color:rgba(255,255,255,.2);display:flex;align-items:center;gap:4px}
+.sdot{width:5px;height:5px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+
+/* VFX anchored to rizz-stage */
+.vfx-layer{position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none;z-index:5}
+.cring{position:absolute;border-radius:50%;border:1.5px solid rgba(127,119,221,.6);transform:translate(-50%,-50%) scale(0);opacity:0}
+.cring.fire{animation:conjureRing .85s ease-out forwards}
+.spark{position:absolute;width:5px;height:5px;border-radius:50%;opacity:0}
+.spark.fire{animation:sparkOut .7s ease-out forwards}
+
+/* hint pills — sit just below Rizz */
+.hint-row{flex:0 0 auto;display:flex;justify-content:center;gap:5px;flex-wrap:wrap;padding:0 12px 10px}
+.hint{font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.65);color:rgba(255,255,255,.75);background:rgba(127,119,221,.08);cursor:pointer;transition:all .2s}
+.hint:hover{border-color:rgba(127,119,221,.5);color:#AFA9EC;background:rgba(127,119,221,.14)}
+.hint.hl{border-color:rgba(127,119,221,.65);color:#CECBF6;background:rgba(127,119,221,.2);font-weight:500}
+.hint-locked{opacity:.35;cursor:default}
+.hint-locked:hover{border-color:rgba(255,255,255,.1)!important;color:rgba(255,255,255,.4)!important;background:rgba(127,119,221,.06)!important}
+
+/* === NEW LAYOUT CONTAINERS FOR CENTERED RIZZ === */
+
+/* Hints now live near the top of the main area */
+.hints-top{flex:0 0 auto;display:flex;flex-direction:column;gap:22px;align-items:center;padding:42px 12px 8px;z-index:10}
+.hint-section{display:flex;flex-direction:column}
+.hint-section.explore{align-self:center}
+.hint-label{font-size:10px;font-weight:500;color:rgba(255,255,255,.72);letter-spacing:.04em;margin-bottom:6px}
+.hint-subrow{display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.hint.add{border-style:dashed;color:rgba(255,255,255,.55)}
+
+/* Center wrapper: the whole "Rizz + immediate chat" block is centered as one unit */
+.rizz-center{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:0;
+  padding:8px 0 4px;
+  position:relative;
+}
+
+/* Live conversation strip – now inside the centered block, bubbles start right under Rizz and feel centralized */
+.conversation-strip{
+  width:100%;
+  max-width:380px;           /* keeps the chat visually centered under the avatar */
+  margin-top:6px;
+  max-height:210px;          /* tight band so it doesn't push the block too low */
+  overflow-y:auto;
+  padding:2px 12px 4px;
+}
+.conversation-strip::-webkit-scrollbar{width:2px}
+.conversation-strip::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+
+/* History pill – appears when we have saved messages */
+.history-pill{display:flex;align-items:center;justify-content:center;gap:5px;margin:2px auto 4px;padding:3px 12px;border-radius:14px;border:.5px solid rgba(127,119,221,.2);color:#fff;font-size:10px;background:rgba(127,119,221,.05);cursor:pointer;transition:all .2s;flex-shrink:0}
+.history-pill:hover{border-color:rgba(127,119,221,.45);color:#AFA9EC;background:rgba(127,119,221,.12)}
+
+/* Bottom history drawer (slide-up) */
+.history-drawer{position:absolute;bottom:0;left:50%;transform:translateX(-50%) translateY(100%);width:100%;max-width:380px;background:#0a1020;border-top:.5px solid rgba(127,119,221,.2);border-radius:10px 10px 0 0;z-index:60;transition:transform .4s cubic-bezier(.4,0,.15,1);display:flex;flex-direction:column;max-height:70%}
+.history-drawer.open{transform:translateX(-50%) translateY(0)}
+.history-drawer-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:.5px solid rgba(255,255,255,.06);flex-shrink:0}
+.history-drawer-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.7)}
+.history-drawer-close{background:none;border:none;color:#fff;cursor:pointer;font-size:11px;padding:2px 8px}
+.history-drawer-close:hover{color:rgba(255,255,255,.7)}
+.history-scroll{flex:1;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:4px;font-size:11px}
+.history-scroll::-webkit-scrollbar{width:2px}
+.history-scroll::-webkit-scrollbar-thumb{background:rgba(127,119,221,.2);border-radius:2px}
+.history-entry{padding:4px 0;border-bottom:.5px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);line-height:1.45;word-break:break-word}
+.history-entry:last-child{border:none}
+.history-entry strong{color:#AFA9EC;font-weight:500}
+
+/* MESSAGE AREA inside the conversation strip (newest near top of strip) */
+.msgs{flex:1;overflow-y:visible;display:flex;flex-direction:column;gap:5px;padding:2px 0;min-height:0}
+.msgs::-webkit-scrollbar{width:2px}
+.msgs::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+.bubble{background:#151e30;border:.5px solid rgba(127,119,221,.14);border-radius:9px;border-bottom-left-radius:2px;padding:8px 11px;font-size:11px;line-height:1.6;color:rgba(255,255,255,.72);animation:fadeUp .25s ease-out;flex-shrink:0}
+.bubble.conjure{border-color:rgba(127,119,221,.35);background:rgba(83,74,183,.15)}
+.ububble{background:#3C3489;border-radius:9px;border-bottom-right-radius:2px;padding:7px 10px;font-size:11px;line-height:1.5;color:rgba(255,255,255,.9);align-self:flex-end;max-width:85%;animation:fadeUp .2s ease-out;flex-shrink:0}
+.chips{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;margin-bottom:4px}
+.chip{font-size:10px;padding:4px 10px;border-radius:14px;border:.5px solid rgba(127,119,221,.28);color:#AFA9EC;background:rgba(127,119,221,.09);cursor:pointer;transition:all .2s}
+.chip:hover{background:rgba(127,119,221,.2);border-color:rgba(127,119,221,.5)}
+
+/* INPUT — pinned to bottom */
+.input-row{flex:0 0 auto;border-top:.5px solid rgba(255,255,255,.05);padding:7px 10px;display:flex;gap:6px;align-items:center;justify-content:center}
+.cinput{max-width:320px;flex:0 1 55%;background:#151e30;border:.5px solid rgba(255,255,255,.07);border-radius:16px;padding:7px 12px;font-size:11px;color:rgba(255,255,255,.8);outline:none;font-family:inherit;transition:border-color .2s}
+.cinput::placeholder{color:#fff}
+.cinput:focus{border-color:rgba(127,119,221,.4)}
+.sbtn{width:28px;height:28px;border-radius:50%;background:#3C3489;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#CECBF6;font-size:12px;flex-shrink:0;transition:background .15s}
+.sbtn:hover{background:#534AB7}
+</style>
+</head>
+<body>
+<div class="scene">
+
+  <!-- top bar -->
+  <div class="topbar">
+    <button class="tpill live">◉ 2 live</button>
+    <button class="tpill" id="tp-calls" onclick="conjure('calls')">3 calls</button>
+    <button class="tpill" id="tp-bounties" onclick="conjure('bounties')">6 bounties</button>
+    <button class="tpill" id="tp-rizz" onclick="conjure('myrizz')">My Rizz</button>
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:rgba(255,255,255,.18);letter-spacing:.04em">Joseph Brand · Founding</div>
+  </div>
+
+  <div class="stage">
+
+    <!-- LEFT PANEL -->
+    <div class="lpanel" id="lpanel">
+      <div class="lp-head">
+        <div class="lp-section-id">
+          <div class="lp-section-icon" id="lp-icon">▶</div>
+          <span id="lp-title">Section</span>
+        </div>
+        <button class="lp-back" onclick="closeSection()">← back to Rizz</button>
+      </div>
+      <div class="lp-body" id="lp-body"></div>
+      <div class="lp-footer"><div class="lp-footer-dot"></div>Rizz is watching this with you</div>
+      <div id="watch-overlay" class="watch-overlay" style="display:none"></div>
+    </div>
+
+    <!-- RIZZ MAIN AREA -->
+    <div class="rizz-main">
+
+      <!-- Hint pills now at the very top -->
+      <div class="hints-top">
+        <div class="hint-section projects">
+          <div class="hint-label">Your projects — for Joe</div>
+          <div class="hint-subrow">
+            <button class="hint" onclick="conjure('catastro')">⛏ CatastroIntel</button>
+            <button class="hint" onclick="conjure('lattice')">✦ Lattice</button>
+            <button class="hint" onclick="conjure('amadena')">🌿 Amadena</button>
+            <button class="hint add" onclick="">+ add another</button>
+          </div>
+        </div>
+        <div class="hint-section explore">
+          <div class="hint-label">Explore</div>
+          <div class="hint-subrow">
+            <button class="hint" onclick="conjure('watch')">▶ Watch</button>
+            <button class="hint" onclick="conjure('network')">Network</button>
+            <button class="hint" onclick="conjure('bounties')">Bounties</button>
+            <button class="hint" onclick="conjure('myrizz')">My Rizz</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Centered block: avatar + live chat + input -->
+      <div class="rizz-center">
+
+        <!-- Rizz avatar -->
+        <div class="rizz-stage">
+          <div class="rizz-rings"><div style="width:0;height:0"></div></div>
+          <div class="rizz-anchor" id="rizz-anchor">
+            <div id="rizz-glow" class="rizz-glow">
+              <svg width="66" height="66" viewBox="0 0 66 66" style="display:block">
+                <defs>
+                  <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#7F77DD"/>
+                    <stop offset="100%" stop-color="#6C42C2"/>
+                  </linearGradient>
+                </defs>
+                <circle cx="33" cy="33" r="30" fill="url(#rg)" stroke="rgba(127,119,221,.3)" stroke-width=".5"/>
+                <text x="33" y="40" text-anchor="middle" fill="rgba(255,255,255,.96)" font-size="32" font-family="system-ui">R</text>
+              </svg>
+            </div>
+            <div class="rizz-lbl">Rizz</div>
+            <div class="rizz-st"><div class="sdot"></div>Listening</div>
+          </div>
+          <div class="vfx-layer" id="vfx-layer"></div>
+        </div>
+
+        <!-- Conversation area: bubbles + history -->
+        <div class="conversation-strip" id="strip">
+          <!-- History pill (saved older messages) -->
+          <div class="history-pill" id="history-pill" style="display:none" onclick="toggleHistoryDrawer()">
+            <span>📋</span>
+            <span id="history-count">earlier in this chat (0)</span>
+          </div>
+          <div class="msgs" id="msgs"></div>
+        </div>
+
+        <!-- History drawer (slide-up) -->
+        <div class="history-drawer" id="history-drawer">
+          <div class="history-drawer-header">
+            <span class="history-drawer-title">Earlier in this chat</span>
+            <button class="history-drawer-close" onclick="toggleHistoryDrawer()">×</button>
+          </div>
+          <div class="history-scroll" id="history-scroll"></div>
+        </div>
+
+        <!-- Input row -->
+        <div class="input-row">
+          <input class="cinput" id="cinput" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendFromInput()"/>
+          <button class="sbtn" onclick="sendFromInput()">↑</button>
+        </div>
+
+      </div><!-- /rizz-center -->
+    </div><!-- /rizz-main -->
+
+  </div><!-- /stage -->
+</div><!-- /scene -->
+
+<script>
+// SECTION DATA
+const SECTIONS={
+  calls:{title:'Active Calls',icon:'📞',pill:'tp-calls',
+    msg:"Here are your active calls — you can jump into any of them.",
+    chips:['Join the coaching call','See call history'],
+    cards:[{title:'Weekly Coaching Call',sub:'3 participants · 24m in',badge:'Live',bclass:'g'},
+           {title:'Strategy Session — Lattice',sub:'2 participants · 12m in',badge:'Live',bclass:'g'},
+           {title:'Community Standup',sub:'Scheduled for 3pm',badge:'Upcoming',bclass:'p'}]},
+  bounties:{title:'Bounties',icon:'💎',pill:'tp-bounties',
+    msg:"Here are open bounties across the platform — check out what's available.",
+    chips:['Create a bounty','View my active bounties'],
+    cards:[{title:'UX Research Feedback',sub:'3 participants · 2 replies',badge:'25 RIZZ',bclass:'g'},
+           {title:'Write onboarding flows',sub:'In review · 4 submissions',badge:'50 RIZZ',bclass:'g'},
+           {title:'Market intel — Sacred Valley',sub:'New request · 1d left',badge:'40 RIZZ',bclass:'p'},
+           {title:'User test session',sub:'Completed · 5 submissions',badge:'30 RIZZ',bclass:'p'}]},
+  myrizz:{title:'My Rizz',icon:'♾',pill:'tp-rizz',
+    msg:"Here's your personal Rizz dashboard — your rep, activity, and growth across the platform.",
+    chips:['See my Rizz history','Compare with network'],
+    rizzNote:"You've gained 12 RIZZ this week — mostly from coaching contributions and project updates.",
+    cards:[{title:'Total RIZZ',sub:'128 earned · top 15% of members',badge:'84 RIZZ',bclass:'g'},
+           {title:'This Week',sub:'+12 RIZZ · 3 contributions',badge:'+12',bclass:'g'},
+           {title:'Rank',sub:'#24 of 312 members · Growth phase',badge:'Top 10%',bclass:'p'},
+           {title:'Active Streak',sub:'6 days · Daily activity log',badge:' lit',bclass:'g'}]},
+  catastro:{title:'CatastroIntel',icon:'⛏',
+    msg:"CatastroIntel — land intelligence for Peru. Here's a quick snapshot.",
+    chips:['See full dashboard','Show me the latest data'],
+    cards:[{title:'Regions tracked',sub:'5 departments · 14 zones',badge:'Live',bclass:'g'},
+           {title:'Recent alert',sub:'Loreto — rainfall anomaly',badge:'New',bclass:'g'}]},
+  lattice:{title:'Lattice',icon:'✦',
+    msg:"Lattice — builder network and community coordination. Want me to walk through anything specific?",
+    chips:['Show my network map','What are open invites?','Who should I connect with?'],
+    cards:[{title:'Your network',sub:'34 connections · 8 pending',badge:'Growing',bclass:'g'},
+           {title:'Open invites',sub:'2 pending · 1 accepted',badge:'2 pending',bclass:'p'},
+           {title:'Community calls',sub:'Next: Thu 3pm · 12 RSVPs',badge:'Soon',bclass:'g'}]},
+  amadena:{title:'Amadena',icon:'🌿',
+    msg:"Amadena — regenerative land projects. Here's what I'm tracking for you.",
+    chips:['Show project map','What are next steps?'],
+    cards:[{title:'Project sites',sub:'3 active · 2 scouting',badge:'Active',bclass:'g'},
+           {title:'Funding round',sub:'Stage: Pre-seed · $75k target',badge:'$22k raised',bclass:'p'}]},
+  watch:{title:'Watch',icon:'▶',
+    msg:"I'll pull up a few things I think are worth your attention. Let me know what catches your eye.",
+    chips:['Save this for later','Find more on this topic'],
+    featuredVideo:{title:'How Lattice networks evolve',id:'dQw4w9WgXcQ',duration:'14:22',sub:'Resourceful'},
+    videos:[{title:'Sacred Valley — Land Report',id:'jNQXAC9IVRw',duration:'8:05',sub:'Amadena'},
+            {title:'Community Building in Web3',id:'dQw4w9WgXcQ',duration:'22:10',sub:'Lattice'}],
+    pdfs:[{title:'Lattice Whitepaper',url:'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',sub:'PDF · 12 pages'},
+          {title:'Sacred Valley — Site Analysis',url:'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',sub:'PDF · 24 slides'}]},
+  network:{title:'Network',icon:'🌐',
+    msg:"Your network — current connections, pending invites, and suggestions for who to reach out to next.",
+    chips:['Suggest connections','View by project'],
+    cards:[{title:'People you know',sub:'34 connections · 12 active',badge:'12 active',bclass:'g'},
+           {title:'Pending invites',sub:'2 sent · 1 received',badge:'3 pending',bclass:'p'},
+           {title:'Suggested',sub:'Based on Lattice + Amadena',badge:'3 people',bclass:'g'},
+           {title:'In your area',sub:'Sacred Valley · Peru',badge:'5 local',bclass:'p'}]}
+};
+
+let current=null;
+
+// Triggers conjure VFX on the avatar
+function vfx(){
+  const layer=document.getElementById('vfx-layer');if(!layer)return;
+  const glow=document.getElementById('rizz-glow');if(glow){glow.classList.add('conjuring');setTimeout(()=>glow.classList.remove('conjuring'),1200);}
+  // rings
+  for(let i=0;i<3;i++){
+    const ring=document.createElement('div');
+    ring.className='cring fire';
+    ring.style.width=ring.style.height=(40+i*28)+'px';
+    ring.style.animationDelay=(i*0.12)+'s';
+    layer.appendChild(ring);
+    setTimeout(()=>ring.remove(),1100);
+  }
+  // sparks
+  for(let i=0;i<8;i++){
+    const sp=document.createElement('div');
+    sp.className='spark fire';
+    const ang=Math.random()*2*Math.PI;
+    const dist=20+Math.random()*30;
+    sp.style.setProperty('--sx',Math.cos(ang)*dist+'px');
+    sp.style.setProperty('--sy',Math.sin(ang)*dist+'px');
+    sp.style.background=['#AFA9EC','#6C42C2','#5DCAA5','#fff'][Math.floor(Math.random()*4)];
+    sp.style.animationDelay=(Math.random()*0.15)+'s';
+    layer.appendChild(sp);
+    setTimeout(()=>sp.remove(),900);
+  }
+}
+
+function buildCards(key){
+  const s=SECTIONS[key];if(!s)return;
+  const ico=document.getElementById('lp-icon');
+  const title=document.getElementById('lp-title');
+  const container=document.getElementById('lp-body');
+  if(!container)return;
+  ico.textContent=s.icon;
+  title.textContent=s.title;
+
+  if(key==='watch'){
+    buildWatchPanel(container,s);
+    return;
+  }
+
+  let html='';
+  (s.cards||[]).forEach((c,i)=>{
+    const bc=c.bclass||'p';
+    const animDelay=0.05*(i+1);
+    html+=`<div class="card ${c.hl||(bc==='g'?'gr':'hl')}" style="animation-delay:${animDelay}s">
+      <div class="card-row">
+        <div><div class="card-t">${c.title}</div>${c.sub?`<div class="card-s">${c.sub}</div>`:''}</div>
+        ${c.badge?`<div class="badge ${bc==='g'?'g':'p'}">${c.badge}</div>`:''}
+      </div>
+      ${c.action?`<button class="card-action">${c.action}</button>`:''}
+    </div>`;
+  });
+  if(s.rizzNote){
+    html+=`<div class="rizz-note"><div class="rizz-note-dot">♾</div><div>${s.rizzNote}</div></div>`;
+  }
+  container.innerHTML=html;
+}
+
+function buildWatchPanel(container,s){
+  let html=`
+    <div class="watch-panel">
+      ${s.featuredVideo?`
+      <div class="watch-featured">
+        <div class="w-card" data-type="video" data-id="${s.featuredVideo.id}">
+          <div class="w-thumb">
+            <img src="https://i.ytimg.com/vi/${s.featuredVideo.id}/hqdefault.jpg" alt="" loading="lazy">
+            <div class="play-pill">▶</div>
+            <div class="dur-badge">${s.featuredVideo.duration}</div>
+          </div>
+          <div class="w-meta">
+            <div>
+              <div class="w-title">${s.featuredVideo.title}</div>
+              <div class="w-sub">${s.featuredVideo.sub}</div>
+            </div>
+            <button class="w-max" title="Maximise">↗</button>
+          </div>
+        </div>
+      </div>`:''}
+      ${s.videos&&s.videos.length?`
+      <div class="watch-divider">More videos</div>
+      <div class="watch-grid">`:''}
+      ${(s.videos||[]).map((v,i)=>`
+        <div class="w-card" data-type="video" data-id="${v.id}" style="animation-delay:${0.1+i*0.06}s">
+          <div class="w-thumb">
+            <img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
+            <div class="play-pill">▶</div>
+            <div class="dur-badge">${v.duration}</div>
+          </div>
+          <div class="w-meta">
+            <div>
+              <div class="w-title">${v.title}</div>
+              <div class="w-sub">${v.sub}</div>
+            </div>
+            <button class="w-max" title="Maximise">↗</button>
+          </div>
+        </div>`).join('')}
+      ${s.videos&&s.videos.length?`</div>`:''}
+      ${s.pdfs&&s.pdfs.length?`
+      <div class="watch-divider">Documents</div>
+      <div class="watch-grid">`:''}
+      ${(s.pdfs||[]).map(item=>{
+        const isSlide=item.sub&&item.sub.includes('slide');
+        if(!isSlide){
+          return `
+            <div class="w-card" data-type="video" data-id="${item.id||''}">
+              <div class="w-thumb">
+                <img src="https://i.ytimg.com/vi/${item.id}/hqdefault.jpg" alt="" loading="lazy">
+                <div class="play-pill">▶</div>
+                <div class="dur-badge">${item.duration}</div>
+              </div>
+              <div class="w-meta">
+                <div>
+                  <div class="w-title">${item.title}</div>
+                  <div class="w-sub">${item.sub}</div>
+                </div>
+                <button class="w-max" title="Maximise">↗</button>
+              </div>
+            </div>`;
+        } else {
+          return `
+            <div class="w-card pdf" data-type="pdf" data-url="${item.url}" data-title="${item.title}">
+              <div class="w-thumb pdf-thumb">
+                <div class="pdf-icon">📄</div>
+                <div class="slide-badge">${item.sub}</div>
+              </div>
+              <div class="w-meta">
+                <div>
+                  <div class="w-title">${item.title}</div>
+                  <div class="w-sub">${item.sub}</div>
+                </div>
+                <div class="w-actions">
+                  <button class="w-open-btn" data-url="${item.url}">Open</button>
+                  <button class="w-max" title="Maximise">↗</button>
+                </div>
+              </div>
+            </div>`;
+        }
+      }).join('')}
+      ${s.pdfs&&s.pdfs.length?`</div>`:''}
+    </div>
+  `;
+  container.innerHTML = html;
+
+  // Attach listeners (maximise + pdf open)
+  container.querySelectorAll('.w-max').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopImmediatePropagation();
+      const card = btn.closest('.w-card');
+      openWatchMax(card);
+    };
+  });
+  container.querySelectorAll('.w-open-btn').forEach(btn => {
+    btn.onclick = (e) => {
+      e.stopImmediatePropagation();
+      const url = btn.getAttribute('data-url');
+      if(url) window.open(url, '_blank');
+    };
+  });
+}
+
+function openWatchMax(card){
+  const overlay = document.getElementById('watch-overlay');
+  if(!overlay) return;
+  overlay.innerHTML = '';
+  overlay.style.display = 'flex';
+
+  const type = card.getAttribute('data-type');
+
+  // Close button
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'watch-overlay-close';
+  closeBtn.textContent = '×';
+  closeBtn.onclick = () => closeWatchMax();
+
+    const contentWrap = document.createElement('div');
+  contentWrap.className = 'watch-overlay-content';
+
+  let pdfFooter = null;
+  if(type === 'video'){
+    const id = card.getAttribute('data-id');
+    const ifr = document.createElement('iframe');
+    ifr.src = `https://www.youtube.com/embed/${id}?autoplay=1&modestbranding=1&rel=0`;
+    ifr.allow = 'autoplay; encrypted-media; picture-in-picture';
+    contentWrap.appendChild(ifr);
+  } else if(type === 'pdf'){
+    const url = card.getAttribute('data-url');
+    const ifr = document.createElement('iframe');
+    ifr.src = url;
+    contentWrap.appendChild(ifr);
+
+    pdfFooter = document.createElement('div');
+    pdfFooter.className = 'watch-overlay-footer';
+    const openBtn = document.createElement('button');
+    openBtn.className = 'w-open-btn';
+    openBtn.textContent = 'Open in new tab ↗';
+    openBtn.onclick = () => window.open(url, '_blank');
+    pdfFooter.appendChild(openBtn);
+  }
+
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(contentWrap);
+  if(pdfFooter) overlay.appendChild(pdfFooter);
+}
+
+function closeWatchMax(){
+  const overlay = document.getElementById('watch-overlay');
+  if(!overlay) return;
+  overlay.innerHTML = '';
+  overlay.style.display = 'none';
+}
+
+function conjure(key){
+  const s=SECTIONS[key];if(!s)return;
+  if(current===key){closeSection();return;}
+  // close any open watch overlay when switching
+  const ov = document.getElementById('watch-overlay');
+  if(ov) { ov.style.display='none'; ov.innerHTML=''; }
+  vfx();
+  document.querySelectorAll('.hint,.tpill').forEach(h=>h.classList.remove('hl','active'));
+  if(s.pill)document.getElementById(s.pill)?.classList.add('active');
+  document.querySelectorAll('.hint').forEach(h=>{
+    if(h.textContent.trim().toLowerCase().includes(s.title.toLowerCase().split(' ')[0]))h.classList.add('hl');
+  });
+  buildCards(key);
+  current=key;
+  setTimeout(()=>{
+    document.getElementById('lpanel').classList.add('open');
+    addMsg(s.msg,'rizz',s.chips);
+  },300);
+}
+
+function closeSection(){
+  const ov = document.getElementById('watch-overlay');
+  if(ov){ ov.style.display='none'; ov.innerHTML=''; }
+  document.getElementById('lpanel').classList.remove('open');
+  document.querySelectorAll('.hint,.tpill').forEach(h=>h.classList.remove('hl','active'));
+  current=null;
+  setTimeout(()=>addMsg("Back — what else is on your mind?",'rizz'),200);
+}
+
+function addMsg(text,role,chips){
+  const area=document.getElementById('msgs');
+  const el=document.createElement('div');
+
+  // Append so new bubbles appear BELOW the previous ones (standard chat order)
+  if(role==='user'){
+    el.className='ububble';
+    el.textContent=text;
+    area.appendChild(el);
+  } else {
+    el.className='bubble'+(current?' conjure':'');
+    el.textContent=text;
+    area.appendChild(el);
+
+    if(chips&&chips.length){
+      const row=document.createElement('div');
+      row.className='chips';
+      chips.forEach(c=>{
+        const b=document.createElement('button');
+        b.className='chip';b.textContent=c;
+        b.onclick=()=>userSend(c);
+        row.appendChild(b);
+      });
+      area.appendChild(row);
+    }
+  }
+
+  // Live strip keeps only the most recent ~5 items visible.
+  // The oldest (first in DOM) gets saved to the history drawer.
+  while(area.children.length > 5){
+    const oldest = area.firstChild;
+    saveToHistory(oldest);
+    area.removeChild(oldest);
+  }
+
+  // Scroll to bottom so the newest message is visible at the bottom of the strip
+  area.scrollTop = area.scrollHeight;
+}
+
+// === History saving (for the bottom drawer) ===
+let conversationHistory = [];
+
+function saveToHistory(node){
+  if(!node) return;
+  // Skip pure chip rows (they are UI affordances, not content)
+  if(node.classList.contains('chips')) return;
+  // store a simple text representation
+  let who = node.classList.contains('ububble') ? 'You' : 'Rizz';
+  let txt = node.textContent || '';
+  if(txt.length > 140) txt = txt.slice(0,140) + '…';
+  conversationHistory.unshift({who, text: txt});
+  updateHistoryPill();
+}
+
+function updateHistoryPill(){
+  const pill = document.getElementById('history-pill');
+  const countEl = document.getElementById('history-count');
+  if(!pill || !countEl) return;
+  if(conversationHistory.length > 0){
+    pill.style.display = 'flex';
+    countEl.textContent = `earlier in this chat (${conversationHistory.length})`;
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+function toggleHistoryDrawer(){
+  const drawer = document.getElementById('history-drawer');
+  if(!drawer) return;
+  const isOpen = drawer.classList.toggle('open');
+  if(isOpen){
+    renderHistory();
+  }
+}
+
+function renderHistory(){
+  const scroll = document.getElementById('history-scroll');
+  if(!scroll) return;
+  scroll.innerHTML = '';
+  if(conversationHistory.length === 0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:rgba(255,255,255,.3);font-size:11px;padding:8px 0';
+    empty.textContent = 'No older messages yet.';
+    scroll.appendChild(empty);
+    return;
+  }
+  conversationHistory.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    div.innerHTML = `<strong>${entry.who}:</strong> ${entry.text}`;
+    scroll.appendChild(div);
+  });
+}
+
+function sendFromInput(){
+  const inp=document.getElementById('cinput');if(!inp)return;
+  const t=inp.value.trim();if(!t)return;
+  inp.value='';
+  userSend(t);
+}
+
+const replies=[
+  "What's the most alive thing in that right now for you?",
+  "How does that connect to what you're building overall?",
+  "What's the next step you can see from here?",
+  "Tell me more — I want to understand where you're at with it.",
+  "And how does having a new baby change the timing on this?"
+];
+let ri=0;
+function userSend(t){
+  addMsg(t,'user');
+  setTimeout(()=>addMsg(replies[ri%replies.length],'rizz'),700);
+  ri++;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    addMsg("Joseph — welcome back. What's most alive for you right now?",'rizz',
+      ['Walk me through my projects',"What's happening on the platform?",'Tell me about Lattice']);
+  },400);
+});
+</script>
+</body>

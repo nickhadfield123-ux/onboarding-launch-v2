@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Rizz · Bidirectional (mode-c)</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d1322;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;height:100vh;width:100vw}
+
+@keyframes rp{0%,100%{opacity:.25;transform:translate(-50%,-50%) scale(1)}50%{opacity:.6;transform:translate(-50%,-50%) scale(1.04)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes ebl{0%,88%,100%{transform:scaleY(1)}94%{transform:scaleY(.06)}}
+@keyframes antb{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave-idle{0%,100%{transform:rotate(-15deg)}50%{transform:rotate(10deg) translateY(-2px)}}
+@keyframes wave-conjure{0%{transform:rotate(-22deg)}25%{transform:rotate(30deg) translateY(-10px)}50%{transform:rotate(-15deg) translateY(-6px)}75%{transform:rotate(25deg) translateY(-8px)}100%{transform:rotate(-15deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes conjureRing{0%{transform:translate(-50%,-50%) scale(.2);opacity:.8}100%{transform:translate(-50%,-50%) scale(2.5);opacity:0}}
+@keyframes sparkOut{0%{opacity:0;transform:translate(var(--sx),var(--sy)) scale(0)}35%{opacity:1;transform:translate(calc(var(--sx)*1.8),calc(var(--sy)*1.8)) scale(1)}100%{opacity:0;transform:translate(calc(var(--sx)*3),calc(var(--sy)*3)) scale(0)}}
+@keyframes panelReveal{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes cardStagger{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rizz-lean{0%{transform:translateX(0) rotate(0deg)}30%{transform:translateX(-8px) rotate(-4deg)}60%{transform:translateX(-4px) rotate(-2deg)}100%{transform:translateX(0) rotate(0deg)}}
+@keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 8px rgba(108,66,194,.3))}50%{filter:drop-shadow(0 0 20px rgba(108,66,194,.7)) drop-shadow(0 0 12px rgba(45,158,107,.4))}}
+@keyframes glowConjure{0%{filter:drop-shadow(0 0 6px rgba(108,66,194,.2))}25%{filter:drop-shadow(0 0 36px rgba(108,66,194,1)) drop-shadow(0 0 24px rgba(45,158,107,.9))}100%{filter:drop-shadow(0 0 8px rgba(108,66,194,.3))}}
+
+.scene{width:100vw;height:100vh;display:flex;flex-direction:column}
+
+/* top bar */
+.topbar{display:flex;align-items:center;gap:6px;padding:7px 12px;border-bottom:.5px solid rgba(255,255,255,.05);flex-shrink:0}
+.tpill{font-size:10px;padding:3px 10px;border-radius:14px;border:.5px solid rgba(255,255,255,.1);color:rgba(255,255,255,.35);background:none;cursor:pointer;transition:all .2s}
+.tpill:hover{border-color:rgba(127,119,221,.4);color:#AFA9EC;background:rgba(127,119,221,.08)}
+.tpill.live{border-color:rgba(29,158,117,.3);color:#5DCAA5}
+.tpill.active{border-color:rgba(127,119,221,.6);color:#CECBF6;background:rgba(127,119,221,.18);font-weight:500}
+
+/* main stage: panel + rizz col side by side */
+.stage{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* Right-side panel mode: reverse the flex order so the panel appears on the right
+   and rizz-main is pushed left (Rizz "goes the other way") */
+.stage.right { flex-direction: row-reverse; }
+
+/* When the panel is on the right, flip its border for visual consistency */
+.stage.right .lpanel { border-right: none; border-left: .5px solid rgba(255,255,255,.05); }
+
+/* LEFT PANEL (becomes generic .panel in bidirectional version) */
+.lpanel{flex-shrink:0;width:0;overflow:hidden;background:#090f1c;border-right:.5px solid rgba(255,255,255,.05);display:flex;flex-direction:column;transition:width .7s cubic-bezier(.4,0,.15,1)}
+.lpanel.open{width:52%}
+.lp-head{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;border-bottom:.5px solid rgba(255,255,255,.06);flex-shrink:0}
+.lp-section-id{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:rgba(255,255,255,.8)}
+.lp-section-icon{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;background:rgba(127,119,221,.15);color:#AFA9EC;flex-shrink:0}
+.lp-back{font-size:10px;color:rgba(255,255,255,.25);background:none;border:none;cursor:pointer;padding:3px 9px;border-radius:6px;display:flex;align-items:center;gap:3px;transition:color .15s}
+.lp-back:hover{color:rgba(255,255,255,.65)}
+.lp-body{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:7px;animation:panelReveal .4s ease-out .1s both}
+.lp-body::-webkit-scrollbar{width:2px}
+.lp-body::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+.lp-footer{flex-shrink:0;border-top:.5px solid rgba(255,255,255,.05);padding:8px 12px;font-size:10px;color:rgba(255,255,255,.2);display:flex;align-items:center;gap:5px}
+.lp-footer-dot{width:4px;height:4px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+
+/* cards */
+.card{background:#111827;border:.5px solid rgba(255,255,255,.06);border-radius:8px;padding:9px 11px;opacity:0;animation:cardStagger .35s ease-out forwards}
+.card.hl{border-color:rgba(127,119,221,.2)}
+.card.gr{border-color:rgba(29,158,117,.16)}
+.card-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px}
+.card-t{font-size:12px;font-weight:500;color:rgba(255,255,255,.85)}
+.card-s{font-size:11px;color:rgba(255,255,255,.3);margin-top:2px;line-height:1.45}
+.badge{font-size:9px;padding:2px 7px;border-radius:9px;font-weight:500;white-space:nowrap;flex-shrink:0}
+.badge.g{background:rgba(29,158,117,.14);color:#5DCAA5;border:.5px solid rgba(29,158,117,.2)}
+.badge.p{background:rgba(127,119,221,.14);color:#AFA9EC;border:.5px solid rgba(127,119,221,.2)}
+.card-action{font-size:10px;padding:4px 10px;border-radius:14px;border:.5px solid rgba(127,119,221,.22);color:#AFA9EC;background:none;cursor:pointer;margin-top:6px;transition:all .15s;display:inline-block}
+.card-action:hover{background:rgba(127,119,221,.1);border-color:rgba(127,119,221,.4)}
+.rizz-note{background:rgba(83,74,183,.1);border:.5px solid rgba(127,119,221,.2);border-radius:7px;padding:7px 10px;font-size:11px;color:rgba(255,255,255,.5);line-height:1.55;display:flex;gap:6px;margin-top:7px}
+.rizz-note-dot{width:14px;height:14px;border-radius:50%;background:rgba(83,74,183,.3);border:.5px solid rgba(127,119,221,.4);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:7px;color:#AFA9EC}
+
+/* RIZZ MAIN — new centered layout container */
+.rizz-main{flex:1;display:flex;flex-direction:column;min-width:180px;overflow:hidden;position:relative}
+
+/* Rizz avatar — upper portion, centred */
+.rizz-stage{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 0 4px;position:relative}
+.rizz-rings{position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none}
+.rizz-rings div{position:absolute;border-radius:50%;border:1px solid rgba(127,119,221,.14);transform:translate(-50%,-50%)}
+.rizz-anchor{display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;z-index:2}
+.rizz-anchor.lean{animation:rizz-lean .9s ease-out forwards}
+.rizz-glow{animation:glowPulse 3s ease-in-out infinite,bob 2.8s ease-in-out infinite}
+.rizz-glow.conjuring{animation:glowConjure 1s ease-out,bob 2.8s ease-in-out 1s infinite}
+.rizz-lbl{font-size:11px;font-weight:500;color:rgba(127,119,221,.75);letter-spacing:.02em}
+.rizz-st{font-size:10px;color:rgba(255,255,255,.2);display:flex;align-items:center;gap:4px}
+.sdot{width:5px;height:5px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite}
+
+/* VFX anchored to rizz-stage */
+.vfx-layer{position:absolute;top:50%;left:50%;width:0;height:0;pointer-events:none;z-index:5}
+.cring{position:absolute;border-radius:50%;border:1.5px solid rgba(127,119,221,.6);transform:translate(-50%,-50%) scale(0);opacity:0}
+.cring.fire{animation:conjureRing .85s ease-out forwards}
+.spark{position:absolute;width:5px;height:5px;border-radius:50%;opacity:0}
+.spark.fire{animation:sparkOut .7s ease-out forwards}
+
+/* hint pills — sit just below Rizz */
+.hint-row{flex:0 0 auto;display:flex;justify-content:center;gap:5px;flex-wrap:wrap;padding:0 12px 10px}
+.hint{font-size:12.5px;font-weight:600;padding:7px 16px;border-radius:16px;border:1px solid rgba(255,255,255,.65);color:rgba(255,255,255,.75);background:rgba(127,119,221,.08);cursor:pointer;transition:all .2s}
+.hint:hover{border-color:rgba(127,119,221,.5);color:#AFA9EC;background:rgba(127,119,221,.14)}
+.hint.hl{border-color:rgba(127,119,221,.65);color:#CECBF6;background:rgba(127,119,221,.2);font-weight:500}
+.hint-locked{opacity:.35;cursor:default}
+.hint-locked:hover{border-color:rgba(255,255,255,.1)!important;color:rgba(255,255,255,.4)!important;background:rgba(127,119,221,.06)!important}
+
+/* === NEW LAYOUT CONTAINERS FOR CENTERED RIZZ === */
+
+/* Hints now live near the top of the main area */
+.hints-top{flex:0 0 auto;display:flex;justify-content:center;gap:5px;flex-wrap:wrap;padding:12px 12px 8px;z-index:10}
+
+/* Center wrapper: the whole "Rizz + immediate chat" block is centered as one unit */
+.rizz-center{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:0;
+  padding:8px 0 4px;
+  position:relative;
+}
+
+/* Live conversation strip – now inside the centered block, bubbles start right under Rizz and feel centralized */
+.conversation-strip{
+  width:100%;
+  max-width:380px;           /* keeps the chat visually centered under the avatar */
+  margin-top:6px;
+  max-height:210px;          /* tight band so it doesn't push the block too low */
+  overflow-y:auto;
+  padding:2px 12px 4px;
+}
+.conversation-strip::-webkit-scrollbar{width:2px}
+.conversation-strip::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+
+/* History pill – appears when we have saved messages */
+.history-pill{display:flex;align-items:center;justify-content:center;gap:5px;margin:2px auto 4px;padding:3px 12px;border-radius:14px;border:.5px solid rgba(127,119,221,.2);color:rgba(127,119,221,.55);font-size:10px;background:rgba(127,119,221,.05);cursor:pointer;transition:all .2s;flex-shrink:0}
+.history-pill:hover{border-color:rgba(127,119,221,.45);color:#AFA9EC;background:rgba(127,119,221,.12)}
+
+/* Bottom history drawer (slide-up) */
+.history-drawer{position:absolute;bottom:0;left:0;right:0;background:#0a1020;border-top:.5px solid rgba(127,119,221,.2);border-radius:10px 10px 0 0;z-index:60;transform:translateY(100%);transition:transform .4s cubic-bezier(.4,0,.15,1);display:flex;flex-direction:column;max-height:70%}
+.history-drawer.open{transform:translateY(0)}
+.history-drawer-header{max-width:380px;width:100%;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:.5px solid rgba(255,255,255,.06);flex-shrink:0}
+.history-drawer-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.7)}
+.history-drawer-close{background:none;border:none;color:rgba(255,255,255,.7);cursor:pointer;font-size:11px;padding:2px 8px}
+.history-drawer-close:hover{color:rgba(255,255,255,.7)}
+.history-scroll{flex:1;overflow-y:auto;padding:8px 14px;display:flex;flex-direction:column;gap:4px;font-size:11px;align-items:center}
+.history-scroll::-webkit-scrollbar{width:2px}
+.history-scroll::-webkit-scrollbar-thumb{background:rgba(127,119,221,.2);border-radius:2px}
+.history-entry{max-width:380px;width:100%;padding:4px 0;border-bottom:.5px solid rgba(255,255,255,.04);color:rgba(255,255,255,.6);line-height:1.45;margin:0 auto}
+.history-entry:last-child{border:none}
+.history-entry strong{color:#AFA9EC;font-weight:500}
+
+/* MESSAGE AREA inside the conversation strip (newest near top of strip) */
+.msgs{flex:1;overflow-y:visible;display:flex;flex-direction:column;gap:5px;padding:2px 0;min-height:0}
+.msgs::-webkit-scrollbar{width:2px}
+.msgs::-webkit-scrollbar-thumb{background:rgba(127,119,221,.15);border-radius:2px}
+.bubble{background:#151e30;border:.5px solid rgba(127,119,221,.14);border-radius:9px;border-bottom-left-radius:2px;padding:8px 11px;font-size:11px;line-height:1.6;color:rgba(255,255,255,.72);animation:fadeUp .25s ease-out;flex-shrink:0}
+.bubble.conjure{border-color:rgba(127,119,221,.35);background:rgba(83,74,183,.15)}
+.ububble{background:#3C3489;border-radius:9px;border-bottom-right-radius:2px;padding:7px 10px;font-size:11px;line-height:1.5;color:rgba(255,255,255,.9);align-self:flex-end;max-width:85%;animation:fadeUp .2s ease-out;flex-shrink:0}
+.chips{display:flex;flex-wrap:wrap;gap:4px;flex-shrink:0;margin-bottom:4px}
+.chip{font-size:10px;padding:4px 10px;border-radius:14px;border:.5px solid rgba(127,119,221,.28);color:#AFA9EC;background:rgba(127,119,221,.09);cursor:pointer;transition:all .2s}
+.chip:hover{background:rgba(127,119,221,.2);border-color:rgba(127,119,221,.5)}
+
+/* INPUT — pinned to bottom */
+.input-row{flex:0 0 auto;border-top:.5px solid rgba(255,255,255,.05);padding:7px 10px;display:flex;gap:6px;align-items:center;justify-content:center}
+.cinput{max-width:320px;flex:0 1 55%;background:#151e30;border:.5px solid rgba(255,255,255,.07);border-radius:16px;padding:7px 12px;font-size:11px;color:rgba(255,255,255,.8);outline:none;font-family:inherit;transition:border-color .2s}
+.cinput::placeholder{color:rgba(255,255,255,.75)}
+.cinput:focus{border-color:rgba(127,119,221,.4)}
+.sbtn{width:28px;height:28px;border-radius:50%;background:#3C3489;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#CECBF6;font-size:12px;flex-shrink:0;transition:background .15s}
+.sbtn:hover{background:#534AB7}
+</style>
+</head>
+<body>
+<div class="scene">
+
+  <!-- top bar -->
+  <div class="topbar">
+    <button class="tpill live">◉ 2 live</button>
+    <button class="tpill" id="tp-calls" onclick="conjure('calls')">3 calls</button>
+    <button class="tpill" id="tp-bounties" onclick="conjure('bounties')">6 bounties</button>
+    <button class="tpill" id="tp-rizz" onclick="conjure('myrizz')">My Rizz</button>
+    <div style="flex:1"></div>
+    <div style="font-size:10px;color:rgba(255,255,255,.18);letter-spacing:.04em">Joseph Brand · Founding</div>
+  </div>
+
+  <div class="stage">
+
+    <!-- LEFT PANEL -->
+    <div class="lpanel" id="lpanel">
+      <div class="lp-head">
+        <div class="lp-section-id">
+          <div class="lp-section-icon" id="lp-icon">▶</div>
+          <span id="lp-title">Section</span>
+        </div>
+        <button class="lp-back" onclick="closeSection()">← back to Rizz</button>
+      </div>
+      <div class="lp-body" id="lp-body"></div>
+      <div class="lp-footer"><div class="lp-footer-dot"></div>Rizz is watching this with you</div>
+    </div>
+
+    <!-- RIZZ MAIN AREA -->
+    <div class="rizz-main">
+
+      <!-- Hint pills now at the very top -->
+      <div class="hints-top">
+        <button class="hint" onclick="conjure('watch')">▶ Watch</button>
+        <button class="hint" onclick="conjure('calls')">Calls</button>
+        <button class="hint" onclick="conjure('catastro')">⛏ CatastroIntel</button>
+        <button class="hint" onclick="conjure('lattice')">✦ Lattice</button>
+        <button class="hint" onclick="conjure('amadena')">🌿 Amadena</button>
+        <button class="hint" onclick="conjure('network')">Network</button>
+      </div>
+
+      <!-- Rizz + chat bubbles as one centered block (bubbles sit right under Rizz) -->
+      <div class="rizz-center">
+        <div class="rizz-stage" id="rizz-stage">
+          <!-- VFX layers anchored here -->
+          <div class="vfx-layer" id="vfx-rings"></div>
+          <div class="vfx-layer" id="vfx-sparks"></div>
+
+          <div class="rizz-rings">
+            <div style="width:120px;height:120px;animation:rp 2.8s ease-in-out infinite;transform:translate(-50%,-50%)"></div>
+            <div style="width:152px;height:152px;animation:rp 2.8s ease-in-out infinite .5s;transform:translate(-50%,-50%)"></div>
+          </div>
+
+          <div class="rizz-anchor" id="rizz-anchor">
+            <div class="rizz-glow" id="rizz-glow">
+              <svg width="110" height="128" viewBox="0 0 180 210">
+                <defs><linearGradient id="ig" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#6c42c2"/><stop offset="100%" stop-color="#2d9e6b"/></linearGradient></defs>
+                <g id="antenna" style="transform-origin:90px 28px;animation:antb 2s ease-in-out infinite"><line x1="90" y1="28" x2="90" y2="8" stroke="#7F77DD" stroke-width="3.5" stroke-linecap="round"/><circle cx="90" cy="5" r="6" fill="#4a8026" stroke="#97C459" stroke-width="2"/><line x1="83" y1="-1" x2="78" y2="-7" stroke="#97C459" stroke-width="2" stroke-linecap="round"/><line x1="97" y1="-1" x2="102" y2="-7" stroke="#97C459" stroke-width="2" stroke-linecap="round"/></g>
+                <rect x="20" y="18" width="140" height="100" rx="16" fill="#3d6b1f"/><rect x="24" y="22" width="132" height="92" rx="12" fill="#4e8828"/>
+                <circle cx="20" cy="68" r="13" fill="#534AB7"/><circle cx="20" cy="68" r="8" fill="#3C3489"/><circle cx="20" cy="68" r="4" fill="#AFA9EC"/>
+                <circle cx="160" cy="68" r="13" fill="#534AB7"/><circle cx="160" cy="68" r="8" fill="#3C3489"/><circle cx="160" cy="68" r="4" fill="#AFA9EC"/>
+                <rect x="30" y="28" width="120" height="76" rx="9" fill="#080810"/>
+                <g id="eye" style="transform-origin:68px 60px;animation:ebl 4.5s ease-in-out infinite"><ellipse cx="68" cy="60" rx="16" ry="19" fill="#97C459"/><ellipse cx="68" cy="62" rx="10" ry="13" fill="#0d1800"/><ellipse cx="63" cy="55" rx="4" ry="5" fill="#97C459" opacity=".55"/><circle cx="62" cy="54" r="1.5" fill="#d4f08a"/></g>
+                <path d="M108 50 L124 61 L108 72" fill="none" stroke="#97C459" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M50 80 Q68 96 90 98 Q112 96 130 80" fill="none" stroke="#97C459" stroke-width="3" stroke-linecap="round"/>
+                <rect x="32" y="133" width="116" height="52" rx="12" fill="#3d6b1f"/><rect x="38" y="137" width="104" height="44" rx="8" fill="#4e8828"/>
+                <rect x="32" y="133" width="116" height="14" rx="12" fill="#534AB7"/><rect x="32" y="142" width="116" height="5" fill="#534AB7"/>
+                <g transform="translate(76,151) scale(1.7)"><path d="M7 8C7 5.8 8.8 4 11 4C13.2 4 14.8 5.5 16 8C17.2 10.5 18.8 12 21 12C23.2 12 25 10.2 25 8C25 5.8 23.2 4 21 4C18.8 4 17.2 5.5 16 8C14.8 10.5 13.2 12 11 12C8.8 12 7 10.2 7 8Z" fill="none" stroke="url(#ig)" stroke-width="2.5"/></g>
+                <rect x="10" y="138" width="24" height="10" rx="5" fill="#534AB7"/><rect x="4" y="147" width="18" height="26" rx="9" fill="#3d6b1f"/>
+                <rect x="146" y="136" width="24" height="10" rx="5" fill="#534AB7"/>
+                <g id="wave-arm" style="transform-origin:161px 120px;animation:wave-idle 1.2s ease-in-out infinite"><rect x="150" y="114" width="22" height="26" rx="10" fill="#3d6b1f" transform="rotate(5,161,120)"/><ellipse cx="164" cy="112" rx="12" ry="9" fill="#d3d1c7"/><rect x="156" y="96" width="5" height="18" rx="2.5" fill="#d3d1c7" transform="rotate(-15,158,104)"/><rect x="162" y="93" width="5" height="20" rx="2.5" fill="#d3d1c7"/><rect x="168" y="95" width="5" height="18" rx="2.5" fill="#d3d1c7" transform="rotate(15,170,104)"/><rect x="172" y="102" width="5" height="14" rx="2.5" fill="#d3d1c7" transform="rotate(30,174,106)"/><rect x="151" y="106" width="7" height="5" rx="2.5" fill="#d3d1c7" transform="rotate(-30,154,108)"/></g>
+              </svg>
+            </div>
+            <div class="rizz-lbl">Rizz</div>
+            <div class="rizz-st"><span class="sdot"></span><span id="rizz-status">Listening</span></div>
+          </div>
+        </div>
+
+        <!-- Live conversation strip now lives inside the centered block, so bubbles start right under Rizz -->
+        <div class="conversation-strip">
+          <div class="msgs" id="msgs"></div>
+        </div>
+      </div>
+
+      <!-- History pill – shows when messages have been saved away -->
+      <div class="history-pill" id="history-pill" onclick="toggleHistoryDrawer()" style="display:none">
+        <span id="history-count">earlier in this chat</span>
+      </div>
+
+      <!-- input pinned to bottom -->
+      <div class="input-row">
+        <input class="cinput" id="chat-in" placeholder="Talk to Rizz..." onkeydown="if(event.key==='Enter'&&this.value.trim()){userSend(this.value);this.value=''}"/>
+        <button class="sbtn" onclick="let i=document.getElementById('chat-in');if(i.value.trim()){userSend(i.value);i.value=''}">↑</button>
+      </div>
+
+      <!-- Bottom history drawer -->
+      <div class="history-drawer" id="history-drawer">
+        <div class="history-drawer-header">
+          <div class="history-drawer-title">Conversation history</div>
+          <button class="history-drawer-close" onclick="toggleHistoryDrawer()">Close</button>
+        </div>
+        <div class="history-scroll" id="history-scroll"></div>
+      </div>
+
+    </div><!-- /rizz-main -->
+  </div><!-- /stage -->
+</div><!-- /scene -->
+
+<script>
+const SECTIONS={
+  watch:{icon:'▶',title:'Watch',pill:'tp-watch',
+    msg:"I'm pulling up Watch — two live sessions running right now.",
+    chips:['Join ARIA live','Show me the overview'],
+    cards:[
+      {t:'ARIA Arena kickoff',s:'Nick Hadfield · Live · 7 watching',badge:'Live',bt:'g',action:'Join live'},
+      {t:'Platform overview',s:'12 min · 142 views',badge:'For you',bt:'p',action:'Watch'},
+      {t:'Founding vision',s:'Nick · 28 min',action:'Watch',rizz:"This one will resonate with where you are right now."}
+    ], side: 'right'},
+  calls:{icon:'📅',title:'Calls',pill:'tp-calls',
+    msg:"Three calls on the schedule. The Governance one has a land-layer discussion — relevant to CatastroIntel.",
+    chips:['Tell me about the land call','What else is on?'],
+    cards:[
+      {t:'ARIA Governance',s:'Today · 3pm UTC',badge:'Today',bt:'g',action:'Join'},
+      {t:'Founding Members',s:'Fri 30 May · 5pm UTC',action:'RSVP'},
+      {t:'1:1 with Nick',s:'Book when ready',action:'Schedule',rizz:"Nick has been looking forward to this."}
+    ], side: 'right'},
+  catastro:{icon:'⛏',title:'CatastroIntel',pill:null,
+    msg:"CatastroIntel — fast progress. Where are you at with the Peru database right now?",
+    chips:['Update me on where this is','How does the token backing work?'],
+    cards:[
+      {t:'Peru mining database',s:'Active data ingestion · claims layer live',badge:'Fast progress',bt:'g'},
+      {t:'Token collaboration',s:'Resourceful · silver & precious metals backing',action:'Explore',rizz:"This could be significant for both projects."},
+      {t:'Open roles',s:'Data engineer · BD lead · unfilled',action:'Post to network'}
+    ], side: 'left'},
+  amadena:{icon:'🌿',title:'Amadena Terra',pill:null,
+    msg:"Amadena Terra — how is Barbara feeling about picking this back up?",
+    chips:['Tell Rizz where this is at','Explore Resourceful activation'],
+    cards:[
+      {t:'Festival concept',s:'Day event · music · experiences · Barbara',badge:'Picking back up',bt:'g'},
+      {t:'Resourceful activation',s:'Pop-up events · travel with the network',action:'Map it out'},
+      {t:'Global reach',s:'Could anchor events in new cities',action:'Explore'}
+    ], side: 'left'},
+    network:{icon:'👥',title:'Network',pill:null,
+    msg:"Your network is building. Giles Custerson is the strongest next connection.",
+    chips:['Introduce me to Giles','Who else should I know?'],
+    cards:[
+      {t:'Giles Custerson',s:'Land governance · UK · strong match',badge:'Connect',bt:'p',action:'Ask Rizz to intro',rizz:"Giles is working on something that maps directly to CatastroIntel."},
+      {t:'3 suggested matches',s:'Systems · pattern · land',action:'See all'},
+      {t:'Post a role',s:'CatastroIntel needs people now',action:'Post'}
+    ], side: 'right'},
+    lattice:{icon:'✦',title:'Lattice',pill:null,
+    msg:"Lattice — the emerging coordination and pattern intelligence layer. Early signals are forming now.",
+    chips:['What is Lattice exactly?','How do I get early access?'],
+    cards:[
+      {t:'Lattice vision',s:'Cross-project intelligence · pattern layer',badge:'Emerging',bt:'p'},
+      {t:'Founding access',s:'Priority for early explorers',action:'Express interest',rizz:"This is one of the most important layers we're building."}
+    ], side: 'left'},
+    myrizz:{icon:'🧠',title:'My Rizz',pill:'tp-rizz',
+    msg:"Your Rizz profile — your story and skills are the biggest gaps right now.",
+    chips:['Help me write my story','What skills should I add?'],
+    cards:[
+      {t:'Name & location',s:'Joseph Brand · Sacred Valley',badge:'Done',bt:'g'},
+      {t:'Your story',s:'Not written yet',action:'Write with Rizz',rizz:"A few sentences about what you're building would unlock a lot."},
+      {t:'Skills & offers',s:'Not set',action:'Add skills'},
+      {t:'Founding status',s:'Active · first to see the platform',badge:'Founding',bt:'p'}
+    ], side: 'right'},
+   bounties:{icon:'⚡',title:'Bounties',pill:'tp-bounties',
+    msg:"Six bounties open. Two match your profile — the coordination map closes in 5 days.",
+    chips:['Show me the matches','What is a bounty?'],
+    cards:[
+      {t:'Coordination map',s:'$800 · Closes in 5 days',badge:'Match',bt:'g',action:'Apply'},
+      {t:'Intelligence layer',s:'$1,200 · Closes in 12 days',badge:'Match',bt:'p',action:'Apply'},
+      {t:'6 total open',s:'Filtered for your profile',action:'See all'}
+    ]}, side: 'right'
+  };
+
+
+let current=null;
+let currentSide = 'left';   // 'left' or 'right' – controls which side the panel appears on
+
+function vfx(){
+  const rings=document.getElementById('vfx-rings');
+  const sparks=document.getElementById('vfx-sparks');
+  rings.innerHTML='';sparks.innerHTML='';
+  [70,120,175].forEach((sz,i)=>{
+    const r=document.createElement('div');
+    r.className='cring fire';
+    r.style.cssText=`width:${sz}px;height:${sz}px;animation-delay:${i*0.1}s;animation-duration:.85s`;
+    rings.appendChild(r);
+  });
+  for(let i=0;i<10;i++){
+    const angle=(i/10)*Math.PI*2;
+    const dist=55+Math.random()*25;
+    const s=document.createElement('div');
+    s.className='spark fire';
+    s.style.cssText=`--sx:${Math.cos(angle)*dist}px;--sy:${Math.sin(angle)*dist}px;left:0;top:0;animation-delay:${Math.random()*0.15}s;animation-duration:.7s;background:${i%3===0?'#5DCAA5':i%3===1?'#AFA9EC':'#CECBF6'}`;
+    sparks.appendChild(s);
+  }
+  const arm=document.getElementById('wave-arm');
+  const glow=document.getElementById('rizz-glow');
+  arm.style.animation='wave-conjure .9s ease-in-out';
+  glow.className='rizz-glow conjuring';
+  document.getElementById('rizz-anchor').classList.add('lean');
+  setTimeout(()=>{
+    arm.style.animation='wave-idle 1.2s ease-in-out infinite';
+    glow.className='rizz-glow';
+    document.getElementById('rizz-anchor').classList.remove('lean');
+  },1500);
+  document.getElementById('rizz-status').textContent='Conjuring…';
+  setTimeout(()=>document.getElementById('rizz-status').textContent='Listening',1200);
+}
+
+function buildCards(key){
+  const body=document.getElementById('lp-body');
+  body.innerHTML='';
+  const s=SECTIONS[key];
+  s.cards.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='card'+(c.badge&&c.bt==='g'?' gr':c.badge?' hl':'');
+    d.style.animationDelay=`${i*0.08+0.15}s`;
+    d.innerHTML=`<div class="card-row"><div><div class="card-t">${c.t}</div><div class="card-s">${c.s}</div></div>${c.badge?`<span class="badge ${c.bt}">${c.badge}</span>`:''}</div>${c.rizz?`<div class="rizz-note"><div class="rizz-note-dot">R</div><span>${c.rizz}</span></div>`:''}${c.action?`<button class="card-action">${c.action}</button>`:''}`;
+    body.appendChild(d);
+  });
+  document.getElementById('lp-icon').textContent=s.icon;
+  document.getElementById('lp-title').textContent=s.title;
+}
+
+function conjure(key){
+  const s=SECTIONS[key];if(!s)return;
+  if(current===key){closeSection();return;}
+
+  const desiredSide = s.side || 'left';
+
+  // Cross-side switch (Lattice <-> Watch, etc.)
+  // Stable "pause-in-middle" version restored 23 May 2026
+  if (current && currentSide !== desiredSide) {
+    vfx(); // conjure from starting side
+
+    const panel = document.getElementById('lpanel');
+
+    // Clean up any leftover styles from previous experiments
+    panel.style.position = '';
+    panel.style.top = '';
+    panel.style.left = '';
+    panel.style.right = '';
+    panel.style.width = '';
+    panel.style.height = '';
+    panel.style.transition = '';
+    panel.style.zIndex = '';
+
+    // Clear highlights
+    document.querySelectorAll('.hint,.tpill').forEach(h=>h.classList.remove('hl','active'));
+
+    // Close current panel (Rizz moves toward center from current side)
+    panel.classList.remove('open');
+
+    // When the close animation finishes, flip side and open the new section
+    const onClosed = () => {
+      panel.removeEventListener('transitionend', onClosed);
+
+      // Flip side — section content teleports to the new side
+      const stage = document.querySelector('.stage');
+      if (desiredSide === 'right') {
+        stage.classList.add('right');
+      } else {
+        stage.classList.remove('right');
+      }
+
+      current = key;
+      currentSide = desiredSide;
+
+      // Populate and open new section (new content appears after movement)
+      buildCards(key);
+      if (s.pill) document.getElementById(s.pill)?.classList.add('active');
+      document.querySelectorAll('.hint').forEach(h => {
+        if (h.textContent.trim().toLowerCase().includes(s.title.toLowerCase().split(' ')[0])) {
+          h.classList.add('hl');
+        }
+      });
+
+      setTimeout(() => {
+        panel.classList.add('open');
+        addMsg(s.msg, 'rizz', s.chips);
+      }, 50);
+    };
+
+    panel.addEventListener('transitionend', onClosed, { once: true });
+    return;
+  }
+
+      current = key;
+      currentSide = desiredSide;
+
+      // Only now show the new section content (after Rizz has landed)
+      buildCards(key);
+      if (s.pill) document.getElementById(s.pill)?.classList.add('active');
+      document.querySelectorAll('.hint').forEach(h => {
+        if (h.textContent.trim().toLowerCase().includes(s.title.toLowerCase().split(' ')[0])) {
+          h.classList.add('hl');
+        }
+      });
+
+      setTimeout(() => {
+        panel.classList.add('open');
+        addMsg(s.msg, 'rizz', s.chips);
+      }, 40);
+    };
+
+    rizzMain.addEventListener('transitionend', finishCross, { once: true });
+
+    return;
+  }
+
+    // Make the old section disappear right away (clear the content)
+    if (body) body.innerHTML = '';
+
+    // Start closing the panel — Rizz will now travel the full distance in one flowing movement
+    panel.classList.remove('open');
+
+    // When the movement is complete, populate and open the new section on the destination side
+    const onClosed = () => {
+      panel.removeEventListener('transitionend', onClosed);
+
+      current = key;
+      currentSide = desiredSide;
+
+      // Now build the new section (it "appears" only after Rizz has landed)
+      buildCards(key);
+      if (s.pill) document.getElementById(s.pill)?.classList.add('active');
+      document.querySelectorAll('.hint').forEach(h => {
+        if (h.textContent.trim().toLowerCase().includes(s.title.toLowerCase().split(' ')[0])) {
+          h.classList.add('hl');
+        }
+      });
+
+      setTimeout(() => {
+        panel.classList.add('open');
+        addMsg(s.msg, 'rizz', s.chips);
+      }, 50);
+    };
+
+    panel.addEventListener('transitionend', onClosed, { once: true });
+
+    return;
+  }
+
+  actuallyOpenSection(key, desiredSide);
+}
+
+function actuallyOpenSection(key, side, triggerVfx = true) {
+  const s = SECTIONS[key];
+  if (!s) return;
+
+  if (triggerVfx) {
+    vfx();
+  }
+
+  document.querySelectorAll('.hint,.tpill').forEach(h=>h.classList.remove('hl','active'));
+  if(s.pill)document.getElementById(s.pill)?.classList.add('active');
+  document.querySelectorAll('.hint').forEach(h=>{
+    if(h.textContent.trim().toLowerCase().includes(s.title.toLowerCase().split(' ')[0]))h.classList.add('hl');
+  });
+  buildCards(key);
+
+  current = key;
+  currentSide = side;
+
+  // Apply the correct side class to .stage
+  const stage = document.querySelector('.stage');
+  if (side === 'right') {
+    stage.classList.add('right');
+  } else {
+    stage.classList.remove('right');
+  }
+
+  setTimeout(()=>{
+    document.getElementById('lpanel').classList.add('open');
+    addMsg(s.msg,'rizz',s.chips);
+  },300);
+}
+
+function closeSection(){
+  document.getElementById('lpanel').classList.remove('open');
+  document.querySelectorAll('.hint,.tpill').forEach(h=>h.classList.remove('hl','active'));
+
+  // Remove any side class
+  const stage = document.querySelector('.stage');
+  stage.classList.remove('right');
+
+  current = null;
+  currentSide = 'left';
+  setTimeout(()=>addMsg("Back — what else is on your mind?",'rizz'),200);
+}
+
+function addMsg(text,role,chips){
+  const area=document.getElementById('msgs');
+  const el=document.createElement('div');
+
+  // Append so new bubbles appear BELOW the previous ones (standard chat order)
+  if(role==='user'){
+    el.className='ububble';
+    el.textContent=text;
+    area.appendChild(el);
+  } else {
+    el.className='bubble'+(current?' conjure':'');
+    el.textContent=text;
+    area.appendChild(el);
+
+    if(chips&&chips.length){
+      const row=document.createElement('div');
+      row.className='chips';
+      chips.forEach(c=>{
+        const b=document.createElement('button');
+        b.className='chip';b.textContent=c;
+        b.onclick=()=>userSend(c);
+        row.appendChild(b);
+      });
+      area.appendChild(row);
+    }
+  }
+
+  // Live strip keeps only the most recent ~5 items visible.
+  // The oldest (first in DOM) gets saved to the history drawer.
+  while(area.children.length > 5){
+    const oldest = area.firstChild;
+    saveToHistory(oldest);
+    area.removeChild(oldest);
+  }
+
+  // Scroll to bottom so the newest message is visible at the bottom of the strip
+  area.scrollTop = area.scrollHeight;
+}
+
+// === History saving (for the bottom drawer) ===
+let conversationHistory = [];
+
+function saveToHistory(node){
+  if(!node) return;
+  // Skip pure chip rows (they are UI affordances, not content)
+  if(node.classList.contains('chips')) return;
+  // store a simple text representation
+  let who = node.classList.contains('ububble') ? 'You' : 'Rizz';
+  let txt = node.textContent || '';
+  if(txt.length > 140) txt = txt.slice(0,140) + '…';
+  conversationHistory.unshift({who, text: txt});
+  updateHistoryPill();
+}
+
+function updateHistoryPill(){
+  const pill = document.getElementById('history-pill');
+  const countEl = document.getElementById('history-count');
+  if(!pill || !countEl) return;
+  if(conversationHistory.length > 0){
+    pill.style.display = 'flex';
+    countEl.textContent = `earlier in this chat (${conversationHistory.length})`;
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+function toggleHistoryDrawer(){
+  const drawer = document.getElementById('history-drawer');
+  if(!drawer) return;
+  const isOpen = drawer.classList.toggle('open');
+  if(isOpen){
+    renderHistory();
+  }
+}
+
+function renderHistory(){
+  const scroll = document.getElementById('history-scroll');
+  if(!scroll) return;
+  scroll.innerHTML = '';
+  if(conversationHistory.length === 0){
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:rgba(255,255,255,.3);font-size:11px;padding:8px 0';
+    empty.textContent = 'No older messages yet.';
+    scroll.appendChild(empty);
+    return;
+  }
+  conversationHistory.forEach(entry => {
+    const div = document.createElement('div');
+    div.className = 'history-entry';
+    div.innerHTML = `<strong>${entry.who}:</strong> ${entry.text}`;
+    scroll.appendChild(div);
+  });
+}
+
+const replies=[
+  "What's the most alive thing in that right now for you?",
+  "How does that connect to what you're building overall?",
+  "What's the next step you can see from here?",
+  "Tell me more — I want to understand where you're at with it.",
+  "And how does having a new baby change the timing on this?"
+];
+let ri=0;
+function userSend(t){
+  addMsg(t,'user');
+  setTimeout(()=>addMsg(replies[ri%replies.length],'rizz'),700);
+  ri++;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>{
+    addMsg("Joseph — welcome back. What's most alive for you right now?",'rizz',
+      ['Walk me through my projects',"What's happening on the platform?",'Tell me about Lattice']);
+  },400);
+});
+</script>
+</body>
+</html>

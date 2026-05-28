@@ -24,12 +24,15 @@ import {
   Settings,
   Maximize2,
   Minimize2,
-  Send
+  Send,
+  Ear
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ParticipantTile } from "@/components/cockpit/ParticipantTile"
 import { RizzTile } from "@/components/RizzTile"
+import { useWakePhraseTrigger } from "@/hooks/useWakePhraseTrigger"
+import { speak } from "@/lib/tts"
 
 // Module-level singleton for the Daily callObject.
 // This survives React remounts of CallTVClient / the parent page,
@@ -100,6 +103,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
   const [liveBounties, setLiveBounties] = React.useState<BountyAlert[]>([])
   const [callSummaryReady, setCallSummaryReady] = React.useState(false)
   const [rizzLastWords, setRizzLastWords] = React.useState<string>("")
+  const [isWakePhraseListening, setIsWakePhraseListening] = React.useState(true)
 
   const participantIds = useParticipantIds({ filter: 'remote' })
   const localSessionId = useLocalSessionId()
@@ -111,6 +115,19 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     : participantIds
 
   const totalTiles = allIds.length + 1 // +1 for RizzTile
+
+  // Wake phrase detection hook
+  const { 
+    triggerDetected: wakePhraseDetected, 
+    transcript: wakePhraseTranscript, 
+    error: wakePhraseError 
+  } = useWakePhraseTrigger(
+    async (transcript: string) => {
+      console.log('[rizz] wake phrase detected:', transcript)
+      sendToRizz(transcript)
+    },
+    { pattern: '\\bhey\\s+rizz?\\b' } // Listen for "hey rizz" variants
+  )
 
   // Stable send function for voice-triggered Rizz messages
   const sendToRizz = React.useCallback(async (message: string) => {
@@ -146,31 +163,6 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       console.warn('[rizz] voice trigger failed:', err)
     }
   }, [roomId, onRizzMessage])
-
-  // Early speech recognition — starts on mount (before Daily joins)
-  // so it can grab the mic before Daily claims it exclusively.
-  React.useEffect(() => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SpeechRecognition) return
-
-    const recognition = new SpeechRecognition()
-    recognition.continuous = true
-    recognition.interimResults = false
-    recognition.lang = 'en-US'
-
-    recognition.onresult = async (event: any) => {
-      const transcript = event.results[event.results.length - 1][0].transcript.trim()
-      console.log('[rizz] heard:', transcript)
-      if (!/what do you think/i.test(transcript)) return
-      sendToRizz(transcript)
-    }
-
-    recognition.onerror = (e: any) => console.warn('[rizz] error:', e.error)
-    recognition.onend = () => { try { recognition.start() } catch(e) {} }
-    recognition.start()
-
-    return () => recognition.stop()
-  }, [])  // empty deps — runs once on mount, before Daily
 
   React.useEffect(() => {
     if (!callObject || hasJoined.current) return
@@ -240,6 +232,12 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }
 
+  // Toggle wake phrase listening
+  const toggleWakePhraseListening = () => {
+    setIsWakePhraseListening(!isWakePhraseListening)
+    console.log(`[rizz] Wake phrase listening ${!isWakePhraseListening ? 'started' : 'stopped'}`)
+  }
+
   // Handle leave
   const handleLeave = async () => {
     await callObject?.leave()
@@ -302,7 +300,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
     }
   }, [screenShareTrack])
 
-  // ADDITION 1: Start Rizz bot when joined
+  // Start Rizz bot when joined
   React.useEffect(() => {
     if (!isJoined) return
     const roomUrl = `https://resourceful.daily.co/${roomId}`
@@ -321,7 +319,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
       .catch(err => console.warn('[rizz] start failed silently:', err))
   }, [isJoined, roomId])
 
-  // ADDITION 2: SSE listener for live Rizz events
+  // SSE listener for live Rizz events
   React.useEffect(() => {
     if (!isJoined) return
     const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
@@ -353,7 +351,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
           setCallSummaryReady(true)
         } else if (type === 'rizz_message' && payload?.text) {
           setRizzLastWords(payload.text)
-          onRizzMessage?.(payload.text)   // ← add this line
+          onRizzMessage?.(payload.text)
           // Clear after 8 seconds so it returns to "Listening..."
           setTimeout(() => setRizzLastWords(""), 8000)
         }
@@ -581,6 +579,22 @@ function CallInner({ roomId, onCallEnded, onRizzMessage }: Props) {
         {isJoined && (
           <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 bg-black/50 rounded-full p-2">
             <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleWakePhraseListening}
+                className={isWakePhraseListening
+                  ? "text-green-400 hover:text-green-300 hover:bg-green-900/30"
+                  : "text-white hover:text-white hover:bg-white/20"
+                }
+                title={isWakePhraseListening ? "Listening for wake phrase" : "Start listening for wake phrase"}
+              >
+                <Ear className="h-5 w-5" />
+                {isWakePhraseListening && (
+                  <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                )}
+              </Button>
+
               <Button
                 variant="ghost"
                 size="icon"
