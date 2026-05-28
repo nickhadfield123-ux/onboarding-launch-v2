@@ -1,0 +1,52 @@
+# Page-Screenshot Repository URL list
+#
+# This list was inferred by scanning the repo:
+#   - Every `page.tsx` under `app/` became a route.
+#   - Static HTML files under `public/` that look like user-facing surfaces
+#     were included too (they ship at the root path).
+#
+# ------------------------------------------------------------------
+# Nick - confirm or edit
+# ------------------------------------------------------------------
+# Please review these entries on your first read of the PR:
+#   1. Is `https://onboarding-launch-v2.vercel.app` still the canonical
+#      production base URL? (Pulled from src/lib/utils.ts and the
+#      magic-link route.) If you have a custom domain, swap it in.
+#   2. The `/v2/room/[id]` route is dynamic. We are using
+#      `sample-room-id` as a placeholder. Tell us a real room ID that
+#      is safe to capture, or confirm that an invalid ID is fine for
+#      visual-regression purposes.
+#   3. `/superuser` looks gated. If it requires auth we can wire up a
+#      logged-in session via a stored cookie or service token. Flag it
+#      and we will add the auth step in a follow-up.
+#   4. Add anything we missed (preview environments, hidden pilot
+#      pages, embeddable widgets).
+# ------------------------------------------------------------------
+
+base_url: https://onboarding-launch-v2.vercel.app
+
+pages:
+  - name: Landing
+    slug: landing
+    url: https://onboarding-launch-v2.vercel.app/
+    tag: marketing
+
+  - name: Onboarding v4
+    slug: onboarding-v4
+    url: https://onboarding-launch-v2.vercel.app/onboardingv4.html
+    tag: onboarding
+
+  - name: Rizz Canvas
+    slug: rizz-canvas
+    url: https://onboarding-launch-v2.vercel.app/rizz-canvas-only.html
+    tag: rizz
+
+  - name: Superuser Console
+    slug: superuser
+    url: https://onboarding-launch-v2.vercel.app/superuser
+    tag: admin
+
+  - name: Room V2 (sample)
+    slug: room-v2-sample
+    url: https://onboarding-launch-v2.vercel.app/v2/room/sample-room-id
+    tag: app
