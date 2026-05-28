@@ -3,45 +3,104 @@
  * Handles SSR safety and browser compatibility
  */
 
+// Module-level voice caching
+let cachedVoices: SpeechSynthesisVoice[] = []
+let audioUnlocked = false
+
+// Initialize voices on voiceschanged event
+if (typeof window !== 'undefined' && typeof speechSynthesis !== 'undefined') {
+  speechSynthesis.onvoiceschanged = () => {
+    console.log('[tts] voiceschanged event fired')
+    cachedVoices = speechSynthesis.getVoices()
+    console.log('[tts] Cached voices:', cachedVoices.map(v => v.name))
+  }
+}
+
 /**
- * Speaks text using the Web Speech API
- * @param text Text to speak
- * @param options Optional voice configuration
+ * Initialize audio context by speaking a silent utterance
+ * This unlocks speechSynthesis for subsequent calls in Chrome
  */
-export const speak = (text: string, options?: {
-  rate?: number
-  pitch?: number
-  volume?: number
-  lang?: string
-}): Promise<void> => {
+export const initAudio = (): Promise<void> => {
   return new Promise((resolve, reject) => {
-    // SSR safety check
     if (typeof window === 'undefined') {
-      console.warn('[tts] speechSynthesis unavailable in SSR environment')
+      console.warn('[tts] SSR environment, skipping audio init')
       resolve()
       return
     }
 
-    // Browser safety check
     if (typeof speechSynthesis === 'undefined' || !speechSynthesis) {
-      console.warn('[tts] speechSynthesis not supported in this browser')
+      console.warn('[tts] speechSynthesis not supported')
       resolve()
       return
     }
 
-    // Check if browser has speech synthesis capabilities
-    if (speechSynthesis.onvoiceschanged !== undefined) {
-      speechSynthesis.onvoiceschanged = () => {
-        doSpeak(text, options, resolve, reject)
-      }
-    } else {
-      doSpeak(text, options, resolve, reject)
+    // Only need to unlock once
+    if (audioUnlocked) {
+      console.log('[tts] Audio already unlocked')
+      resolve()
+      return
+    }
+
+    console.log('[tts] Initializing audio context...')
+    
+    const unlock = new SpeechSynthesisUtterance('')
+    unlock.volume = 0
+    unlock.rate = 1.0
+    unlock.pitch = 1.0
+
+    unlock.onend = () => {
+      console.log('[tts] Audio context unlocked')
+      audioUnlocked = true
+      resolve()
+    }
+
+    unlock.onerror = (event) => {
+      console.warn('[tts] Audio init error:', event.error)
+      // Continue anyway - unlock might fail on some browsers
+      audioUnlocked = true
+      resolve()
+    }
+
+    try {
+      speechSynthesis.speak(unlock)
+    } catch (error) {
+      console.warn('[tts] Audio init failed:', error)
+      audioUnlocked = true
+      resolve()
     }
   })
 }
 
+/**
+ * Gets cached voices or tries to get fresh voices
+ */
+export const getVoices = (): SpeechSynthesisVoice[] => {
+  if (!isSpeechSynthesisSupported()) return []
+  
+  // Return cached voices if available
+  if (cachedVoices.length > 0) {
+    return cachedVoices
+  }
+  
+  // Try to get fresh voices
+  const freshVoices = speechSynthesis.getVoices()
+  if (freshVoices.length > 0) {
+    console.log('[tts] Got fresh voices:', freshVoices.map(v => v.name))
+    cachedVoices = freshVoices
+    return freshVoices
+  }
+  
+  return []
+}
+
 function findMaleVoice(): SpeechSynthesisVoice | null {
-  const voices = speechSynthesis.getVoices()
+  const voices = getVoices()
+  console.log('[tts] findMaleVoice called with', voices.length, 'voices')
+  
+  if (voices.length === 0) {
+    console.warn('[tts] No voices available for male voice selection')
+    return null
+  }
   
   // Priority order for male voices
   const priorityPatterns = [
@@ -57,7 +116,10 @@ function findMaleVoice(): SpeechSynthesisVoice | null {
   // Check for exact matches first
   for (const pattern of priorityPatterns) {
     const voice = voices.find(v => pattern.test(v.name))
-    if (voice) return voice
+    if (voice) {
+      console.log('[tts] Found male voice:', voice.name)
+      return voice
+    }
   }
   
   // Fallback: look for any male voice
@@ -65,9 +127,59 @@ function findMaleVoice(): SpeechSynthesisVoice | null {
     v.name.toLowerCase().includes('male') || 
     v.name.toLowerCase().includes('man')
   )
-  if (maleVoice) return maleVoice
+  if (maleVoice) {
+    console.log('[tts] Found fallback male voice:', maleVoice.name)
+    return maleVoice
+  }
   
+  console.log('[tts] No male voice found')
   return null
+}
+
+/**
+ * Speaks text using the Web Speech API
+ * @param text Text to speak
+ * @param options Optional voice configuration
+ */
+export const speak = (text: string, options?: {
+  rate?: number
+  pitch?: number
+  volume?: number
+  lang?: string
+}): Promise<void> => {
+  console.log('[tts] speak() called for text of length', text.length, 'chars')
+  
+  return new Promise((resolve, reject) => {
+    // SSR safety check
+    if (typeof window === 'undefined') {
+      console.warn('[tts] speechSynthesis unavailable in SSR environment')
+      resolve()
+      return
+    }
+
+    // Browser safety check
+    if (typeof speechSynthesis === 'undefined' || !speechSynthesis) {
+      console.warn('[tts] speechSynthesis not supported in this browser')
+      resolve()
+      return
+    }
+
+    // Try to unlock audio context
+    if (!audioUnlocked) {
+      console.log('[tts] Audio not unlocked, attempting to init...')
+      initAudio()
+        .then(() => {
+          console.log('[tts] Audio unlocked, proceeding with speech')
+          doSpeak(text, options, resolve, reject)
+        })
+        .catch(err => {
+          console.warn('[tts] Audio unlock failed, proceeding anyway:', err)
+          doSpeak(text, options, resolve, reject)
+        })
+    } else {
+      doSpeak(text, options, resolve, reject)
+    }
+  })
 }
 
 function doSpeak(
@@ -76,6 +188,12 @@ function doSpeak(
   resolve: () => void,
   reject: (reason?: any) => void
 ): void {
+  console.log('[tts] doSpeak() called')
+  
+  // Check if voices are loaded
+  const voices = getVoices()
+  console.log('[tts] getVoices() returned', voices.length, 'voices')
+  
   const utterance = new SpeechSynthesisUtterance(text)
   
   // Find male voice
@@ -97,6 +215,10 @@ function doSpeak(
   utterance.lang = options.lang ?? 'en-US'
 
   // Event handlers
+  utterance.onstart = () => {
+    console.log('[tts] Speech started')
+  }
+
   utterance.onend = () => {
     console.log('[tts] Speech completed')
     resolve()
@@ -108,6 +230,7 @@ function doSpeak(
   }
 
   try {
+    console.log('[tts] Calling speechSynthesis.speak()')
     speechSynthesis.speak(utterance)
   } catch (error) {
     console.error('[tts] Failed to speak:', error)
@@ -140,22 +263,15 @@ export const isSpeechSynthesisSupported = (): boolean => {
 }
 
 /**
- * Gets available voices
- */
-export const getVoices = (): SpeechSynthesisVoice[] => {
-  if (!isSpeechSynthesisSupported()) return []
-  
-  // Wait for voices to be loaded
-  if (speechSynthesis.onvoiceschanged !== undefined) {
-    return speechSynthesis.getVoices()
-  }
-  
-  return []
-}
-
-/**
  * Gets the best male voice available
  */
 export const getMaleVoice = (): SpeechSynthesisVoice | null => {
   return findMaleVoice()
+}
+
+/**
+ * Checks if audio is unlocked
+ */
+export const isAudioUnlocked = (): boolean => {
+  return audioUnlocked
 }
