@@ -33,12 +33,14 @@ export function RizzPanel({ incomingMessage, inProgressMessage, roomId }: RizzPa
      setMessages(prev => [...prev, { role: 'rizz', text: incomingMessage, ts: Date.now() }])
    }, [incomingMessage])
 
-   // When speech is in progress, update the last Rizz bubble with the progressive reveal
-   useEffect(() => {
-     if (!inProgressMessage) return
-     
-     // Add a placeholder bubble when speech starts (empty text)
-     if (inProgressMessage === "" && !placeholderAdded.current) {
+// When speech is in progress, update the last Rizz bubble with the progressive reveal
+    useEffect(() => {
+      if (!inProgressMessage) return
+      
+      console.log('[rizz-panel] progress:', inProgressMessage)
+      
+      // Add a placeholder bubble when speech starts (empty text)
+      if (inProgressMessage === "" && !placeholderAdded.current) {
        placeholderAdded.current = true
        setMessages(prev => {
          // Check if we already have a placeholder being updated

@@ -622,7 +622,6 @@ useDailyEvent('error', useCallback((e) => {
                                  justify-center">
                     <RizzTile 
                       isSpeaking={rizzLastWords !== ""} 
-                      lastWords={rizzLastWords}
                     />
                  </div>
               </div>
@@ -649,7 +648,6 @@ useDailyEvent('error', useCallback((e) => {
                     <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
                       <RizzTile 
                         isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
-                        lastWords={rizzLastWords}
                       />
                     </div>
               </div>
