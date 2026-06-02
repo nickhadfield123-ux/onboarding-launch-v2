@@ -10,7 +10,9 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
   const gradientId = "rizz-ig"
 
   return (
-    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video">
+    <div
+      className={`relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video transition-[box-shadow] duration-500 ease-out ${isSpeaking ? 'rizz-speaking' : ''}`}
+    >
       <style>{`
         @keyframes gi {
           0%,100% { filter: drop-shadow(0 0 10px rgba(108,66,194,.35)) }
@@ -31,6 +33,13 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
         @keyframes ebl {
           0%,88%,100% { transform: scaleY(1) }
           94% { transform: scaleY(.06) }
+        }
+        @keyframes rizz-speaking-pulse {
+          0%, 100% { box-shadow: 0 0 10px 2px rgba(255,255,255,0.3), 0 0 25px 6px rgba(147,51,234,0.3); }
+          50%      { box-shadow: 0 0 20px 6px rgba(255,255,255,0.7), 0 0 45px 12px rgba(147,51,234,0.6); }
+        }
+        .rizz-speaking {
+          animation: rizz-speaking-pulse 1.4s ease-in-out infinite;
         }
       `}</style>
 
