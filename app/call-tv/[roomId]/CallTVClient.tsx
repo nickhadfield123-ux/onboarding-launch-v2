@@ -6,7 +6,7 @@ globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
-import { DailyProvider, useDaily, useDailyEvent, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
+import { DailyProvider, useDaily, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
 import { useMemo, useCallback, useRef } from "react"
 import {
   ArrowLeft,
@@ -77,10 +77,14 @@ export default function CallTVClient({ roomId, onCallEnded, onRizzMessage }: Pro
 }
 
 function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props) {
-   console.log('🔵 CallInner IS MOUNTING')
   const callObject = useDaily()
   console.log('📞 callObject:', callObject)
   const hasJoined = React.useRef(false)
+
+  React.useEffect(() => {
+    console.log('🔵 CallInner MOUNTED')
+    return () => console.log('🔴 CallInner UNMOUNTED')
+  }, [])
 
   const [isJoined, setIsJoined] = React.useState(false)
   const [isJoining, setIsJoining] = React.useState(false)
@@ -339,33 +343,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
     }
   }, [isJoined, duration, allIds.length])
 
-  // Screen sharing events
-  useDailyEvent('local-screen-share-started', useCallback((ev) => {
-    console.log('✅ Local screen share started:', ev)
-    setIsLocalSharing(true)
-    setSharingParticipantName('You')
-  }, []))
-
-  useDailyEvent('local-screen-share-stopped', useCallback((ev) => {
-    console.log('👋 Local screen share stopped:', ev)
-    setIsLocalSharing(false)
-    setSharingParticipantName(null)
-    setScreenShareTrack(null)
-  }, []))
-
-  useDailyEvent('participant-updated', useCallback((ev) => {
-    const participant = ev.participant
-    if (participant.screen) {
-      const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
-      setSharingParticipantName(name)
-      if (participant.tracks?.screen?.track) {
-        setScreenShareTrack(participant.tracks.screen.track)
-      }
-    } else if (participant.local && !participant.screen) {
-      setSharingParticipantName(null)
-      setScreenShareTrack(null)
-    }
-  }, []))
+  // (Daily event listeners are registered in the single consolidated useEffect below.)
 
   // Attach screen share track
   React.useEffect(() => {
@@ -451,25 +429,68 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
     }
   }, [isJoined, roomId])
 
-  useDailyEvent('joined-meeting', useCallback((e) => {
-    console.log('✅ JOINED MEETING EVENT', e)
-    setIsJoined(true)
-    setIsJoining(false)
-    setError(null)
-  }, []))
+  // Consolidated Daily event listener registration.
+  // Replaces 6 individual useDailyEvent calls to prevent listener
+  // accumulation on every render. Runs once per callObject.
+  React.useEffect(() => {
+    if (!callObject) return
 
-  useDailyEvent('left-meeting', useCallback((e) => {
-    console.log('👋 Left meeting:', e)
-    setIsJoined(false)
-    if (onCallEnded) {
-      onCallEnded(finalDuration.current, finalParticipantCount.current)
+    const onJoinedMeeting = () => {
+      console.log('✅ JOINED MEETING EVENT')
+      setIsJoined(true)
+      setIsJoining(false)
+      setError(null)
     }
-  }, [onCallEnded]))
+    const onLeftMeeting = () => {
+      console.log('👋 Left meeting')
+      setIsJoined(false)
+      if (onCallEnded) onCallEnded(finalDuration.current, finalParticipantCount.current)
+    }
+    const onError = (e: any) => {
+      console.log('❌ ERROR EVENT', e)
+      setError(e.errorMsg)
+    }
+    const onLocalScreenShareStarted = () => {
+      console.log('✅ Local screen share started')
+      setIsLocalSharing(true)
+      setSharingParticipantName('You')
+    }
+    const onLocalScreenShareStopped = () => {
+      console.log('👋 Local screen share stopped')
+      setIsLocalSharing(false)
+      setSharingParticipantName(null)
+      setScreenShareTrack(null)
+    }
+    const onParticipantUpdated = (ev: any) => {
+      const participant = ev.participant
+      if (participant.screen) {
+        const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
+        setSharingParticipantName(name)
+        if (participant.tracks?.screen?.track) {
+          setScreenShareTrack(participant.tracks.screen.track)
+        }
+      } else if (participant.local && !participant.screen) {
+        setSharingParticipantName(null)
+        setScreenShareTrack(null)
+      }
+    }
 
-useDailyEvent('error', useCallback((e) => {
-     console.log('❌ ERROR EVENT', e)
-     setError(e.errorMsg)
-   }, []))
+    callObject.on('joined-meeting', onJoinedMeeting)
+    callObject.on('left-meeting', onLeftMeeting)
+    callObject.on('error', onError)
+    callObject.on('local-screen-share-started', onLocalScreenShareStarted)
+    callObject.on('local-screen-share-stopped', onLocalScreenShareStopped)
+    callObject.on('participant-updated', onParticipantUpdated)
+
+    return () => {
+      callObject.off('joined-meeting', onJoinedMeeting)
+      callObject.off('left-meeting', onLeftMeeting)
+      callObject.off('error', onError)
+      callObject.off('local-screen-share-started', onLocalScreenShareStarted)
+      callObject.off('local-screen-share-stopped', onLocalScreenShareStopped)
+      callObject.off('participant-updated', onParticipantUpdated)
+    }
+  }, [callObject, onCallEnded])
 
   // Hidden demo keyboard shortcut: press 'R' to trigger Rizz introduction
   // Completely invisible - no UI changes, just triggers audio+speech
