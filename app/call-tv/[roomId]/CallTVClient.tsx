@@ -637,21 +637,19 @@ useDailyEvent('error', useCallback((e) => {
                ${totalTiles === 2 ? 'grid-cols-2' : ''}
                ${totalTiles >= 3 ? 'grid-cols-2 grid-rows-2' : ''}
              `}>
-               {allIds.map(id => (
-                 <ParticipantTile
-                   key={id}
-                   sessionId={id}
-                   isLocal={id === localSessionId}
-                 />
-                ))}
-{/* Rizz bot tile - full size participant card inside the same grid (no absolute, matches ParticipantTile dimensions) */}
-                    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px] flex items-center justify-center">
-                      <RizzTile 
-                        isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
-                      />
-                    </div>
+{allIds.map(id => (
+                  <ParticipantTile
+                    key={id}
+                    sessionId={id}
+                    isLocal={id === localSessionId}
+                  />
+                 ))}
+{/* Rizz bot tile - full size participant card inside the same grid */}
+                <RizzTile 
+                  isSpeaking={rizzLastWords !== "" && isSpeechPlaying} 
+                />
               </div>
-           )}
+            )}
 
            {/* Call Status Overlay */}
            {isJoined && (
