@@ -126,58 +126,9 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
    // Audio unlock state
    const hasUnlockedAudio = React.useRef(false)
 
-// Wake phrase detection hook with broad pattern and transcript logging
-   const { 
-     triggerDetected: wakePhraseDetected, 
-     transcript: wakePhraseTranscript, 
-     error: wakePhraseError,
-     start: startWakePhrase,
-     stop: stopWakePhrase,
-   } = useWakePhraseTrigger(
-    async (transcript: string) => {
-      console.log('[rizz] wake phrase detected:', transcript)
-      
-// First trigger: send introduction
-       if (!hasIntroduced.current) {
-         hasIntroduced.current = true
-         console.log('[rizz] First trigger - sending introduction')
-         
-         // Start speech with progressive text reveal via timer
-         const words = INTRODUCTION_TEXT.split(' ')
-         let wordIndex = 0
-         onRizzProgress?.("")
-         
-         const revealInterval = setInterval(() => {
-           wordIndex++
-           onRizzProgress?.(words.slice(0, wordIndex).join(' '))
-           if (wordIndex >= words.length) {
-             clearInterval(revealInterval)
-           }
-         }, 250)
-         
-         try {
-           await speak(INTRODUCTION_TEXT)
-         } catch (err) {
-           console.warn('[rizz] intro speech failed:', err)
-         } finally {
-           clearInterval(revealInterval)
-           setIsSpeechPlaying(false)
-         }
-         
-         // Show full text after speech starts
-         onRizzMessage?.(INTRODUCTION_TEXT)
-         return // Skip normal server chat call for intro
-       }
-       
-       // Subsequent triggers: normal conversational mode
-       sendToRizz(transcript)
-     },
-    { 
-      pattern: '\\b(hey|hi|a)\\s+(rizz?|rez|res|chris)\\b|\\bharris\\b' // Broad pattern as requested
-    }
-  )
-
-// Stable send function for voice-triggered Rizz messages
+// Stable send function for voice-triggered Rizz messages.
+// Declared BEFORE the wake-phrase hook so handleWakePhrase can
+// reference it in its useCallback dependency array.
    const sendToRizz = React.useCallback(async (message: string) => {
      const rizzUrl = process.env.NEXT_PUBLIC_RIZZ_SERVER_URL
      if (!rizzUrl) return
@@ -194,7 +145,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
          let wordIndex = 0
          setIsSpeechPlaying(true)
          onRizzProgress?.("")
-         
+
          const revealInterval = setInterval(() => {
            wordIndex++
            onRizzProgress?.(words.slice(0, wordIndex).join(' '))
@@ -202,7 +153,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
              clearInterval(revealInterval)
            }
          }, 250)
-         
+
          try {
            await speak(data.text)
          } catch (err) {
@@ -211,7 +162,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
            clearInterval(revealInterval)
            setIsSpeechPlaying(false)
          }
-         
+
          // Show full text after speech starts
          onRizzMessage?.(data.text)
        }
@@ -219,6 +170,62 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
        console.warn('[rizz] voice trigger failed:', err)
      }
    }, [roomId, onRizzMessage, onRizzProgress])
+
+// Wake phrase detection hook with broad pattern and transcript logging.
+// The callback is wrapped in useCallback with stable deps so the hook
+// doesn't re-initialize its SpeechRecognition instance on every
+// CallInner render (which was causing a render storm during TTS).
+   const handleWakePhrase = React.useCallback(async (transcript: string) => {
+     console.log('[rizz] wake phrase detected:', transcript)
+
+     // First trigger: send introduction
+     if (!hasIntroduced.current) {
+       hasIntroduced.current = true
+       console.log('[rizz] First trigger - sending introduction')
+
+       // Start speech with progressive text reveal via timer
+       const words = INTRODUCTION_TEXT.split(' ')
+       let wordIndex = 0
+       onRizzProgress?.("")
+
+       const revealInterval = setInterval(() => {
+         wordIndex++
+         onRizzProgress?.(words.slice(0, wordIndex).join(' '))
+         if (wordIndex >= words.length) {
+           clearInterval(revealInterval)
+         }
+       }, 250)
+
+       try {
+         await speak(INTRODUCTION_TEXT)
+       } catch (err) {
+         console.warn('[rizz] intro speech failed:', err)
+       } finally {
+         clearInterval(revealInterval)
+         setIsSpeechPlaying(false)
+       }
+
+       // Show full text after speech starts
+       onRizzMessage?.(INTRODUCTION_TEXT)
+       return // Skip normal server chat call for intro
+     }
+
+     // Subsequent triggers: normal conversational mode
+     sendToRizz(transcript)
+   }, [onRizzProgress, onRizzMessage, sendToRizz])
+
+   const {
+     triggerDetected: wakePhraseDetected,
+     transcript: wakePhraseTranscript,
+     error: wakePhraseError,
+     start: startWakePhrase,
+     stop: stopWakePhrase,
+   } = useWakePhraseTrigger(
+     handleWakePhrase,
+     {
+       pattern: '\\b(hey|hi|a)\\s+(rizz?|rez|res|chris)\\b|\\bharris\\b',
+     }
+   )
 
   // Initialize audio context on first user interaction
   const unlockAudio = React.useCallback(async () => {
