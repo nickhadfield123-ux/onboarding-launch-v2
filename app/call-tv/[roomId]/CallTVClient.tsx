@@ -468,8 +468,25 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
       setSharingParticipantName(null)
       setScreenShareTrack(null)
     }
+    const logParticipantAudioState = () => {
+      if (!callObject) return
+      const participants = callObject.participants()
+      console.log('👥 PARTICIPANT AUDIO STATE:')
+      console.table(
+        Object.values(participants).map((p: any) => ({
+          id: p.session_id,
+          local: p.local,
+          audioEnabled: p.audio,
+          audioTrack: !!p.tracks?.audio?.track,
+          audioState: p.tracks?.audio?.state,
+        }))
+      )
+    }
+
     const onParticipantUpdated = (ev: any) => {
       const participant = ev.participant
+      // Log full audio state for any participant join/update
+      logParticipantAudioState()
       if (participant.screen) {
         const name = participant.local ? 'You' : participant.user_name || `Participant ${participant.session_id.slice(-4)}`
         setSharingParticipantName(name)
