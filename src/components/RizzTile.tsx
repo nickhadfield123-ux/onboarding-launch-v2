@@ -36,7 +36,7 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
 
       <svg 
         className="absolute inset-0 w-full h-full"
-        viewBox="0 0 180 210" 
+        viewBox="-30 -30 240 270" 
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
