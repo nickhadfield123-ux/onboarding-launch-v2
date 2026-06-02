@@ -118,7 +118,7 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
 
   // First trigger introduction logic
   const hasIntroduced = React.useRef(false)
-  const INTRODUCTION_TEXT = "Hi! I'm Rizz, and I'm learning alongside Nick and the Resourceful crew how I can best serve the collective. I have context on each person, can provide meeting transcriptions, and offer strategic advice based on everything happening across Resourceful. Beyond that, the sky really is the limit — we can build pretty much anything together!"
+  const INTRODUCTION_TEXT = "Hi, I'm Rizz — I have context on everyone in this call and everything happening across Resourceful. I can transcribe, advise, and connect the dots. And honestly? We're just getting started."
 
 // State to track when speech is actually playing (for avatar animation)
    const [isSpeechPlaying, setIsSpeechPlaying] = React.useState(false)
