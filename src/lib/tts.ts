@@ -195,7 +195,7 @@ function doSpeak(
   console.log('[tts] getVoices() returned', voices.length, 'voices')
   
   const utterance = new SpeechSynthesisUtterance(text)
-  
+
   // Find male voice
   const maleVoice = findMaleVoice()
   if (maleVoice) {
@@ -207,25 +207,40 @@ function doSpeak(
     utterance.rate = 0.95
     console.log('[tts] No male voice found, using fallback pitch/rate')
   }
-  
+
   // Set optional parameters
   utterance.rate = options.rate ?? utterance.rate
   utterance.pitch = options.pitch ?? utterance.pitch
   utterance.volume = options.volume ?? 1.0
   utterance.lang = options.lang ?? 'en-US'
 
-// Event handlers
+  // Helper: toggle the rizz-speaking CSS class on the RizzTile DOM element
+  // directly, bypassing React state. This is a pragmatic demo fix for the
+  // glow animation — long-term it should be driven by isSpeaking state.
+  const setRizzSpeaking = (on: boolean) => {
+    if (typeof document === 'undefined') return
+    const tiles = document.querySelectorAll<HTMLElement>('[data-rizz-tile]')
+    tiles.forEach(el => {
+      if (on) el.classList.add('rizz-speaking')
+      else el.classList.remove('rizz-speaking')
+    })
+  }
+
+  // Event handlers
   utterance.onstart = () => {
     console.log('[tts] onstart fired')
+    setRizzSpeaking(true)
   }
 
   utterance.onend = () => {
     console.log('[tts] Speech completed')
+    setRizzSpeaking(false)
     resolve()
   }
 
   utterance.onerror = (event) => {
     console.error('[tts] Speech synthesis error:', event.error)
+    setRizzSpeaking(false)
     reject(new Error(`Speech synthesis error: ${event.error}`))
   }
 

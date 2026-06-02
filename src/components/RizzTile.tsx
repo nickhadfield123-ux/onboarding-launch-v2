@@ -11,6 +11,7 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
 
   return (
     <div
+      data-rizz-tile
       className={`relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video transition-[box-shadow] duration-500 ease-out ${isSpeaking ? 'rizz-speaking' : ''}`}
     >
       <style>{`
@@ -43,9 +44,9 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
         }
       `}</style>
 
-      <svg 
+      <svg
         className="absolute inset-0 w-full h-full"
-        viewBox="-30 -30 240 270" 
+        viewBox="-30 -30 240 270"
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
