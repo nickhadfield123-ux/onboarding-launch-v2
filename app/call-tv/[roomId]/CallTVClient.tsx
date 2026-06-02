@@ -6,7 +6,7 @@ globalThis.__webpack_disable_ses_lockdown = true;
 
 import * as React from "react"
 import DailyIframe, { type DailyCall } from '@daily-co/daily-js'
-import { DailyProvider, useDaily, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo } from "@daily-co/daily-react"
+import { DailyProvider, useDaily, useParticipantIds, useLocalSessionId, useScreenShare, DailyVideo, DailyAudio } from "@daily-co/daily-react"
 import { useMemo, useCallback, useRef } from "react"
 import {
   ArrowLeft,
@@ -543,6 +543,14 @@ function CallInner({ roomId, onCallEnded, onRizzMessage, onRizzProgress }: Props
 
   return (
     <div className="h-full flex flex-col bg-slate-900">
+      {/* Render remote-participant audio. <DailyAudio /> is a headless
+          component from @daily-co/daily-react that binds the callObject's
+          remote audio tracks to <audio> elements so they actually play
+          through the browser. Without it, remote participants can be
+          seen but not heard (TTS works because it uses the local
+          speechSynthesis API, bypassing Daily entirely). */}
+      <DailyAudio />
+
       {/* Header Bar */}
       <header className="bg-slate-900 border-b border-slate-700 px-4 py-3">
         <div className="flex items-center justify-between">
