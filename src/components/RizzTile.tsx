@@ -10,7 +10,7 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
   const gradientId = "rizz-ig"
 
   return (
-    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video min-h-[200px]">
+    <div className="relative bg-slate-800 rounded-xl overflow-hidden h-full w-full aspect-video">
       <style>{`
         @keyframes gi {
           0%,100% { filter: drop-shadow(0 0 10px rgba(108,66,194,.35)) }
@@ -37,7 +37,7 @@ export function RizzTile({ isSpeaking }: RizzTileProps) {
       <svg 
         className="absolute inset-0 w-full h-full"
         viewBox="0 0 180 210" 
-        preserveAspectRatio="xMidYMid slice"
+        preserveAspectRatio="xMidYMid meet"
       >
         <defs>
           <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
