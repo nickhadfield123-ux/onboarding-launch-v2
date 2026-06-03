@@ -166,7 +166,7 @@ export function PostCallPage({
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Status</div>
-                  <div className="font-medium capitalize">{status}</div>
+                  <div className="font-medium">Meeting completed</div>
                 </div>
               </div>
             </CardContent>
