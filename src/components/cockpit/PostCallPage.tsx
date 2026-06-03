@@ -85,19 +85,6 @@ export function PostCallPage({
     return `${mins} minute${mins !== 1 ? 's' : ''}`
   }
 
-  const getStatusBadge = () => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800 border-green-200"><CheckCircle className="h-4 w-4 mr-1" /> Completed</Badge>
-      case 'aborted':
-        return <Badge className="bg-amber-100 text-amber-800 border-amber-200"><XCircle className="h-4 w-4 mr-1" /> Aborted</Badge>
-      case 'cancelled':
-        return <Badge className="bg-red-100 text-red-800 border-red-200"><XCircle className="h-4 w-4 mr-1" /> Cancelled</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
   const handleSaveNotes = () => {
     if (onSaveNotes) {
       onSaveNotes(notes)
@@ -132,14 +119,11 @@ export function PostCallPage({
           </Button>
         </div>
         <div className="flex-1 space-y-2 mx-6">
-          <div className="flex items-center gap-3">
-            {getStatusBadge()}
-            <Badge variant="outline" className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {formatDuration(duration)}
-            </Badge>
-          </div>
-          <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatDuration(duration)}
+          </Badge>
+          <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
           <p className="text-gray-300">Session Summary & Next Steps</p>
         </div>
         <div className="flex gap-2">
