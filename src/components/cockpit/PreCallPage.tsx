@@ -37,7 +37,46 @@ import {
   Home
 } from "lucide-react"
 
-// Mock user profiles
+// Demo roster for the Resourceful × NexFlow build-review room.
+// When the meeting id starts with "meeting-temp-" the PreCallPage
+// uses this fixed roster and the demo Team Context panel below,
+// overriding the default MOCK_USERS + meeting_type-driven copy.
+const DEMO_PARTICIPANTS = [
+  {
+    id: "nick",
+    display_name: "Nick Hadfield",
+    role: "Resourceful, Founder",
+    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Nick",
+    is_online: true,
+    status: "Online, Host",
+  },
+  {
+    id: "rishi",
+    display_name: "Rishi",
+    role: "NexFlow, Infrastructure Lead",
+    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi",
+    is_online: true,
+    status: "Online, Attendee",
+  },
+  {
+    id: "arjun",
+    display_name: "Arjun",
+    role: "NexFlow, Engineering",
+    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun",
+    is_online: true,
+    status: "Online, Attendee",
+  },
+  {
+    id: "rizz",
+    display_name: "Rizz",
+    role: "AI Assistant",
+    avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Rizz",
+    is_online: true,
+    status: "Always present",
+  },
+]
+
+// Generic mock roster (used for non-demo rooms).
 const MOCK_USERS = [
   { id: "1", display_name: "Sarah Chen", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah", is_online: true },
   { id: "2", display_name: "Marcus Webb", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus", is_online: true },
@@ -68,6 +107,15 @@ export function PreCallPage({
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
+
+  // Demo-mode flag: true for the Resourceful × NexFlow build-review
+  // room (and any other "meeting-temp-" room used for the demo).
+  // When true, we use the fixed DEMO_PARTICIPANTS roster and the
+  // demo Team Context panel instead of the generic MOCK_USERS /
+  // meeting_type-driven copy.
+  const isDemoRoom = typeof meeting.id === 'string' && meeting.id.startsWith('meeting-temp-')
+  const displayTitle = isDemoRoom ? 'Resourceful × NexFlow — Build Review' : meeting.title
+  const activeParticipants = isDemoRoom ? DEMO_PARTICIPANTS : MOCK_USERS
 
   React.useEffect(() => {
     rizzDispatch({ type: 'SET_MODE', payload: 'pre-call' })
@@ -143,7 +191,7 @@ export function PreCallPage({
         </div>
 
         <div className="flex-1 space-y-2 mx-6">
-          <h1 className="text-2xl font-bold text-white">{meeting.title}</h1>
+          <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
           {meeting.description && (
             <p className="text-muted-foreground">{meeting.description}</p>
           )}
@@ -247,12 +295,12 @@ export function PreCallPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {/* Online Participants */}
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Online Now</div>
-                  <div className="space-y-2">
-                    {MOCK_USERS.filter(u => u.is_online).map((user) => (
+              {isDemoRoom ? (
+                <div className="space-y-2">
+                  {DEMO_PARTICIPANTS.map((user) => {
+                    const isHost = user.status.includes('Host')
+                    const isAi = user.role === 'AI Assistant'
+                    return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
                         <div className="relative">
                           <Avatar className="h-8 w-8">
@@ -261,39 +309,69 @@ export function PreCallPage({
                           </Avatar>
                           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-green-500" />
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{user.display_name}</div>
-                          <div className="text-xs text-muted-foreground">Online</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{user.display_name}</div>
+                          <div className="text-xs text-muted-foreground truncate">{user.role}</div>
                         </div>
-                        <Badge variant="secondary" className="text-xs">Host</Badge>
+                        <Badge
+                          variant={isHost ? 'secondary' : isAi ? 'default' : 'outline'}
+                          className="text-xs shrink-0"
+                        >
+                          {isHost ? 'Host' : isAi ? 'AI' : 'Attendee'}
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
+                    )
+                  })}
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Online Participants */}
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-2">Online Now</div>
+                    <div className="space-y-2">
+                      {MOCK_USERS.filter(u => u.is_online).map((user) => (
+                        <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
+                          <div className="relative">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar_url} alt={user.display_name} />
+                              <AvatarFallback>{user.display_name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-green-500" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium">{user.display_name}</div>
+                            <div className="text-xs text-muted-foreground">Online</div>
+                          </div>
+                          <Badge variant="secondary" className="text-xs">Host</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                {/* Expected Participants */}
-                <div>
-                  <div className="text-sm font-medium text-muted-foreground mb-2">Expected</div>
-                  <div className="space-y-2">
-                    {MOCK_USERS.filter(u => !u.is_online).map((user) => (
-                      <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                        <div className="relative">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                            <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-gray-400" />
+                  {/* Expected Participants */}
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground mb-2">Expected</div>
+                    <div className="space-y-2">
+                      {MOCK_USERS.filter(u => !u.is_online).map((user) => (
+                        <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
+                          <div className="relative">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={user.avatar_url} alt={user.display_name} />
+                              <AvatarFallback>{user.display_name[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-gray-400" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="font-medium">{user.display_name}</div>
+                            <div className="text-xs text-muted-foreground">Offline</div>
+                          </div>
+                          <Badge variant="outline" className="text-xs">Attendee</Badge>
                         </div>
-                        <div className="flex-1">
-                          <div className="font-medium">{user.display_name}</div>
-                          <div className="text-xs text-muted-foreground">Offline</div>
-                        </div>
-                        <Badge variant="outline" className="text-xs">Attendee</Badge>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -342,7 +420,45 @@ export function PreCallPage({
 
         {/* Call Type Specific Content */}
         <div className="space-y-6">
-          {meeting.meeting_type === 'team-sync' && (
+          {isDemoRoom && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Team Context
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">About This Call</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Nick built the initial Resourceful platform as a solo non-technical founder</div>
+                    <div>• Rishi and Arjun (NexFlow) have been embedded in the codebase for 3 months</div>
+                    <div>• This call reviews what's been built and what's coming next</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">What We're Covering</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Live demo of the Resourceful platform and Rizz</div>
+                    <div>• NexFlow's contributor onboarding framework in GitHub</div>
+                    <div>• Infrastructure mapping — making the platform scalable</div>
+                    <div>• Autonomous agents — the roadmap ahead</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Rizz Has Context On</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Each participant's role and background</div>
+                    <div>• The full Resourceful × NexFlow engagement scope</div>
+                    <div>• Platform architecture and open threads</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isDemoRoom && meeting.meeting_type === 'team-sync' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -469,36 +585,41 @@ export function PreCallPage({
             </CardHeader>
             <CardContent>
               <div className="max-h-64 overflow-auto space-y-2 mb-4">
-                {MOCK_USERS.map((user) => (
-                  <div
-                    key={user.id}
-                    onClick={() => toggleUser(user.id)}
-                    className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
-                      selectedUsers.has(user.id) 
-                        ? 'bg-primary/20 border border-primary' 
-                        : 'hover:bg-muted'
-                    }`}
-                  >
-                    <div className="relative">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                        <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                      </Avatar>
-                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
-                        user.is_online ? 'bg-green-500' : 'bg-gray-400'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{user.display_name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {user.is_online ? 'Online' : 'Offline'}
+                {activeParticipants.map((user: any) => {
+                  // For demo participants (no .is_online field) assume online.
+                  // For mock users, honor their is_online flag.
+                  const isOnline = user.is_online ?? true
+                  return (
+                    <div
+                      key={user.id}
+                      onClick={() => toggleUser(user.id)}
+                      className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
+                        selectedUsers.has(user.id)
+                          ? 'bg-primary/20 border border-primary'
+                          : 'hover:bg-muted'
+                      }`}
+                    >
+                      <div className="relative">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user.avatar_url} alt={user.display_name} />
+                          <AvatarFallback>{user.display_name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                          isOnline ? 'bg-green-500' : 'bg-gray-400'
+                        }`} />
                       </div>
+                      <div className="flex-1">
+                        <div className="font-medium">{user.display_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {isOnline ? 'Online' : 'Offline'}
+                        </div>
+                      </div>
+                      {selectedUsers.has(user.id) && (
+                        <Check className="h-5 w-5 text-primary" />
+                      )}
                     </div>
-                    {selectedUsers.has(user.id) && (
-                      <Check className="h-5 w-5 text-primary" />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" className="flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700" onClick={() => setShowInviteModal(false)}>
