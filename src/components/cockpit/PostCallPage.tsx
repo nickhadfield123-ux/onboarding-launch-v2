@@ -37,13 +37,22 @@ import {
   Home
 } from "lucide-react"
 
-// Mock user profiles
+// Demo roster for the Resourceful × NexFlow build-review room.
+// Matches PreCallPage so the post-call list shows the same people.
+const DEMO_PARTICIPANTS = [
+  { id: "rishi", display_name: "Rishi Yedavalli", role: "NexFlow, Co-founder" },
+  { id: "arjun", display_name: "Arjun Dixit", role: "NexFlow, Co-founder" },
+  { id: "nick", display_name: "Nick Hadfield", role: "Resourceful, Founder" },
+  { id: "rizz", display_name: "Rizz", role: "AI Assistant" },
+]
+
+// Generic mock roster (used for non-demo rooms).
 const MOCK_USERS = [
-  { id: "1", display_name: "Sarah Chen", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah", is_online: true },
-  { id: "2", display_name: "Marcus Webb", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus", is_online: true },
-  { id: "3", display_name: "Elena Rodriguez", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena", is_online: false },
-  { id: "4", display_name: "James Kim", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=James", is_online: true },
-  { id: "5", display_name: "Priya Patel", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya", is_online: false },
+  { id: "1", display_name: "Sarah Chen", is_online: true },
+  { id: "2", display_name: "Marcus Webb", is_online: true },
+  { id: "3", display_name: "Elena Rodriguez", is_online: false },
+  { id: "4", display_name: "James Kim", is_online: true },
+  { id: "5", display_name: "Priya Patel", is_online: false },
 ]
 
 interface PostCallPageProps {
@@ -98,6 +107,12 @@ export function PostCallPage({
   const handleClearNotes = () => {
     setNotes('')
   }
+
+  // Demo-mode flag: true for the Resourceful × NexFlow build-review
+  // room. Mirrors the same flag in PreCallPage.
+  const isDemoRoom = typeof meeting.id === "string" && meeting.id.startsWith("meeting-temp-")
+  const displayTitle = isDemoRoom ? "Resourceful × NexFlow — Build Review" : meeting.title
+  const postCallParticipants = isDemoRoom ? DEMO_PARTICIPANTS : MOCK_USERS
 
   return (
     <div className="space-y-6 text-white">
@@ -159,7 +174,7 @@ export function PostCallPage({
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Participants</div>
-                  <div className="font-medium">{MOCK_USERS.length}</div>
+                  <div className="font-medium">{postCallParticipants.length}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-lg">
                   <div className="text-sm text-muted-foreground mb-1">Recording</div>
@@ -182,22 +197,20 @@ export function PostCallPage({
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  {MOCK_USERS.map((user) => (
-                    <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                      <div className="relative">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                          <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                        </Avatar>
-                      </div>
-                      <div className="flex-1">
-                        <div className="font-medium">{user.display_name}</div>
-                      </div>
+              <div className="space-y-2">
+                {postCallParticipants.map((user) => (
+                  <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback>{user.display_name[0]}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{user.display_name}</div>
+                      {"role" in user && (user as any).role && (
+                        <div className="text-xs text-muted-foreground truncate">{(user as any).role}</div>
+                      )}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -242,7 +255,53 @@ export function PostCallPage({
 
         {/* Call Context */}
         <div className="space-y-6">
-          {meeting.meeting_type === 'team-sync' && (
+          {isDemoRoom && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Rizz Summary
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Generated from this call's transcript</p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Key Moments</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Nick walked Rishi and Arjun through the live Resourceful dashboard and the Rizz intro flow end-to-end.</div>
+                    <div>• Rishi mapped the current infrastructure: Next.js + Supabase + Daily.co, flagged Postgres connection-pool limits under load.</div>
+                    <div>• Arjun demoed NexFlow's GitHub contributor onboarding framework and how it maps to Resourceful's open issues.</div>
+                    <div>• Rizz flagged two open architecture threads (multi-tenant data model, agent runtime isolation) and proposed a follow-up doc.</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Decisions</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• NexFlow continues as embedded contributors for the next quarter, with a focus on the agent runtime.</div>
+                    <div>• Infrastructure mapping doc to be co-authored by Rishi this week.</div>
+                    <div>• Rizz becomes a first-class call participant in every Resourceful x NexFlow review.</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Action Items</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Nick: send Rishi the Postgres pool config so he can size the next migration.</div>
+                    <div>• Rishi: draft the infrastructure doc and share by Friday.</div>
+                    <div>• Arjun: file the three highest-leverage onboarding issues in the Resourceful repo.</div>
+                    <div>• Rizz: auto-generate a per-call architecture brief ahead of the next review.</div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="text-sm font-medium">Follow-ups</div>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <div>• Next review in two weeks, same format, with the infrastructure doc as a pre-read.</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!isDemoRoom && meeting.meeting_type === 'team-sync' && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">

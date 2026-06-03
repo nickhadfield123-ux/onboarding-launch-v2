@@ -81,7 +81,7 @@ export default function RoomV2Page() {
   return (
     <PlatformFrame
       leftSidebar={{
-        content: <div className="p-6"><h3 className="font-semibold mb-4">Participants</h3><p className="text-sm text-gray-500">Call controls will appear here</p></div>,
+        content: <div className="p-6" />,
         expanded: leftSidebarExpanded,
         onToggle: () => setLeftSidebarExpanded(prev => !prev)
       }}

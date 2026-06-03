@@ -4,36 +4,21 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
 import { Meeting } from "@/lib/meetings/types"
 import { useCall, useRizz } from "@/lib/cockpit/context"
 import { getHubUrl } from "@/lib/utils"
 import {
   Video,
   Users,
-  Calendar,
-  Clock,
   Link2,
   Copy,
   Check,
   ChevronRight,
-  Loader2,
   UserPlus,
   Play,
-  Pause,
   MapPin,
   MessageCircle,
   FileText,
-  Camera,
-  Mic,
-  MicOff,
-  Video as VideoIcon,
-  VideoOff,
-  CheckCircle,
-  XCircle,
-  Save,
-  RotateCcw,
   Home
 } from "lucide-react"
 
@@ -41,36 +26,35 @@ import {
 // When the meeting id starts with "meeting-temp-" the PreCallPage
 // uses this fixed roster and the demo Team Context panel below,
 // overriding the default MOCK_USERS + meeting_type-driven copy.
+// Order: NexFlow co-founders first (Rishi, Arjun), then Nick as
+// Host, then Rizz as the always-present AI assistant. No avatar
+// URLs — initials in a coloured circle are rendered instead.
 const DEMO_PARTICIPANTS = [
   {
-    id: "nick",
-    display_name: "Nick Hadfield",
-    role: "Resourceful, Founder",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Nick",
-    is_online: true,
-    status: "Online, Host",
-  },
-  {
     id: "rishi",
-    display_name: "Rishi",
-    role: "NexFlow, Infrastructure Lead",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Rishi",
+    display_name: "Rishi Yedavalli",
+    role: "NexFlow, Co-founder",
     is_online: true,
     status: "Online, Attendee",
   },
   {
     id: "arjun",
-    display_name: "Arjun",
-    role: "NexFlow, Engineering",
-    avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Arjun",
+    display_name: "Arjun Dixit",
+    role: "NexFlow, Co-founder",
     is_online: true,
     status: "Online, Attendee",
+  },
+  {
+    id: "nick",
+    display_name: "Nick Hadfield",
+    role: "Resourceful, Founder",
+    is_online: true,
+    status: "Online, Host",
   },
   {
     id: "rizz",
     display_name: "Rizz",
     role: "AI Assistant",
-    avatar_url: "https://api.dicebear.com/7.x/bottts/svg?seed=Rizz",
     is_online: true,
     status: "Always present",
   },
@@ -78,12 +62,55 @@ const DEMO_PARTICIPANTS = [
 
 // Generic mock roster (used for non-demo rooms).
 const MOCK_USERS = [
-  { id: "1", display_name: "Sarah Chen", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah", is_online: true },
-  { id: "2", display_name: "Marcus Webb", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus", is_online: true },
-  { id: "3", display_name: "Elena Rodriguez", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena", is_online: false },
-  { id: "4", display_name: "James Kim", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=James", is_online: true },
-  { id: "5", display_name: "Priya Patel", avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya", is_online: false },
+  { id: "1", display_name: "Sarah Chen", is_online: true },
+  { id: "2", display_name: "Marcus Webb", is_online: true },
+  { id: "3", display_name: "Elena Rodriguez", is_online: false },
+  { id: "4", display_name: "James Kim", is_online: true },
+  { id: "5", display_name: "Priya Patel", is_online: false },
 ]
+
+// Stable colour palette for initials avatars (used in demo + mock lists).
+const AVATAR_PALETTE = [
+  "bg-indigo-600",
+  "bg-emerald-600",
+  "bg-amber-600",
+  "bg-rose-600",
+  "bg-sky-600",
+  "bg-violet-600",
+]
+
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
+}
+
+function getAvatarColor(id: string): string {
+  const idx = id.charCodeAt(0) % AVATAR_PALETTE.length
+  return AVATAR_PALETTE[idx]
+}
+
+function InitialsAvatar({ id, name, online }: { id: string; name: string; online: boolean }) {
+  return (
+    <div className="relative">
+      <div
+        className={`h-8 w-8 rounded-full ${getAvatarColor(id)} text-white text-xs font-semibold flex items-center justify-center select-none`}
+        aria-label={name}
+        title={name}
+      >
+        {getInitials(name)}
+      </div>
+      <div
+        className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+          online ? "bg-green-500" : "bg-gray-400"
+        }`}
+      />
+    </div>
+  )
+}
 
 interface PreCallPageProps {
   meeting: Meeting
@@ -94,31 +121,28 @@ interface PreCallPageProps {
   isLinkCopied: boolean
 }
 
-export function PreCallPage({ 
-  meeting, 
-  roomUrl, 
-  onJoinCall, 
-  onInviteUsers, 
-  onCopyLink, 
-  isLinkCopied 
+export function PreCallPage({
+  meeting,
+  roomUrl,
+  onJoinCall,
+  onInviteUsers,
+  onCopyLink,
+  isLinkCopied,
 }: PreCallPageProps) {
-  console.log('🎨 PreCallPage rendering with:', { meeting, roomUrl })
-  
+  console.log("🎨 PreCallPage rendering with:", { meeting, roomUrl })
+
   const { dispatch: rizzDispatch } = useRizz()
   const [showInviteModal, setShowInviteModal] = React.useState(false)
   const [selectedUsers, setSelectedUsers] = React.useState<Set<string>>(new Set())
 
   // Demo-mode flag: true for the Resourceful × NexFlow build-review
   // room (and any other "meeting-temp-" room used for the demo).
-  // When true, we use the fixed DEMO_PARTICIPANTS roster and the
-  // demo Team Context panel instead of the generic MOCK_USERS /
-  // meeting_type-driven copy.
-  const isDemoRoom = typeof meeting.id === 'string' && meeting.id.startsWith('meeting-temp-')
-  const displayTitle = isDemoRoom ? 'Resourceful × NexFlow — Build Review' : meeting.title
+  const isDemoRoom = typeof meeting.id === "string" && meeting.id.startsWith("meeting-temp-")
+  const displayTitle = isDemoRoom ? "Resourceful × NexFlow — Build Review" : meeting.title
   const activeParticipants = isDemoRoom ? DEMO_PARTICIPANTS : MOCK_USERS
 
   React.useEffect(() => {
-    rizzDispatch({ type: 'SET_MODE', payload: 'pre-call' })
+    rizzDispatch({ type: "SET_MODE", payload: "pre-call" })
   }, [rizzDispatch])
 
   const toggleUser = (userId: string) => {
@@ -135,40 +159,6 @@ export function PreCallPage({
     onInviteUsers(Array.from(selectedUsers))
     setSelectedUsers(new Set())
     setShowInviteModal(false)
-  }
-
-  const formatMeetingTime = (date: Date | string) => {
-    const d = new Date(date)
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
-
-  const formatMeetingDate = (date: Date | string) => {
-    const d = new Date(date)
-    const today = new Date()
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-    
-    if (d.toDateString() === today.toDateString()) return 'Today'
-    if (d.toDateString() === tomorrow.toDateString()) return 'Tomorrow'
-    return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
-  }
-
-  const getMeetingTypeIcon = (type: string) => {
-    switch (type) {
-      case 'team-sync': return <Users className="h-4 w-4" />
-      case 'strategy': return <FileText className="h-4 w-4" />
-      case 'co-creation': return <MessageCircle className="h-4 w-4" />
-      default: return <Video className="h-4 w-4" />
-    }
-  }
-
-  const getMeetingTypeColor = (type: string) => {
-    switch (type) {
-      case 'team-sync': return 'bg-blue-100 text-blue-800 border-blue-200'
-      case 'strategy': return 'bg-green-100 text-green-800 border-green-200'
-      case 'co-creation': return 'bg-purple-100 text-purple-800 border-purple-200'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200'
-    }
   }
 
   return (
@@ -192,22 +182,14 @@ export function PreCallPage({
 
         <div className="flex-1 space-y-2 mx-6">
           <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
-          {meeting.description && (
-            <p className="text-muted-foreground">{meeting.description}</p>
-          )}
+          {meeting.description && <p className="text-muted-foreground">{meeting.description}</p>}
         </div>
 
         <div className="flex gap-2">
           <Button
             variant="outline"
             size="default"
-            onClick={() => {
-              console.log('🎯 Invite People button clicked!')
-              console.log('📋 onInviteUsers function:', onInviteUsers)
-              console.log('🎯 Setting showInviteModal to true')
-              setShowInviteModal(true)
-              console.log('✅ Invite modal opened')
-            }}
+            onClick={() => setShowInviteModal(true)}
             className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
           >
             <UserPlus className="h-4 w-4" />
@@ -227,7 +209,6 @@ export function PreCallPage({
           <Button
             variant="secondary"
             onClick={() => {
-              console.log('🎯 Cancel button clicked!')
               const hubUrl = getHubUrl()
               window.location.href = hubUrl
             }}
@@ -256,23 +237,17 @@ export function PreCallPage({
                   <div className="text-sm text-muted-foreground">Room URL</div>
                   <div className="font-mono text-sm">{roomUrl}</div>
                 </div>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() => {
-                    console.log('🎯 Copy Link button clicked!')
-                    console.log('📋 onCopyLink function:', onCopyLink)
-                    console.log('🎯 Calling onCopyLink...')
-                    onCopyLink()
-                    console.log('✅ onCopyLink called successfully')
-                  }}
-            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                  onClick={() => onCopyLink()}
+                  className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
                 >
                   <Copy className="h-4 w-4" />
-                  {isLinkCopied ? 'Copied!' : 'Copy'}
+                  {isLinkCopied ? "Copied!" : "Copy"}
                 </Button>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -280,7 +255,14 @@ export function PreCallPage({
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Duration: {Math.round((new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) / (1000 * 60))} min</span>
+                  <span>
+                    Duration:{" "}
+                    {Math.round(
+                      (new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) /
+                        (1000 * 60)
+                    )}{" "}
+                    min
+                  </span>
                 </div>
               </div>
             </CardContent>
@@ -298,26 +280,20 @@ export function PreCallPage({
               {isDemoRoom ? (
                 <div className="space-y-2">
                   {DEMO_PARTICIPANTS.map((user) => {
-                    const isHost = user.status.includes('Host')
-                    const isAi = user.role === 'AI Assistant'
+                    const isHost = user.status.includes("Host")
+                    const isAi = user.role === "AI Assistant"
                     return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                        <div className="relative">
-                          <Avatar className="h-8 w-8">
-                            <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                            <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                          </Avatar>
-                          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-green-500" />
-                        </div>
+                        <InitialsAvatar id={user.id} name={user.display_name} online={!!user.is_online} />
                         <div className="flex-1 min-w-0">
                           <div className="font-medium truncate">{user.display_name}</div>
                           <div className="text-xs text-muted-foreground truncate">{user.role}</div>
                         </div>
                         <Badge
-                          variant={isHost ? 'secondary' : isAi ? 'default' : 'outline'}
+                          variant={isHost ? "secondary" : isAi ? "default" : "outline"}
                           className="text-xs shrink-0"
                         >
-                          {isHost ? 'Host' : isAi ? 'AI' : 'Attendee'}
+                          {isHost ? "Host" : isAi ? "AI" : "Attendee"}
                         </Badge>
                       </div>
                     )
@@ -325,19 +301,12 @@ export function PreCallPage({
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {/* Online Participants */}
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-2">Online Now</div>
                     <div className="space-y-2">
-                      {MOCK_USERS.filter(u => u.is_online).map((user) => (
+                      {MOCK_USERS.filter((u) => u.is_online).map((user) => (
                         <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                          <div className="relative">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                              <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-green-500" />
-                          </div>
+                          <InitialsAvatar id={user.id} name={user.display_name} online />
                           <div className="flex-1">
                             <div className="font-medium">{user.display_name}</div>
                             <div className="text-xs text-muted-foreground">Online</div>
@@ -348,19 +317,12 @@ export function PreCallPage({
                     </div>
                   </div>
 
-                  {/* Expected Participants */}
                   <div>
                     <div className="text-sm font-medium text-muted-foreground mb-2">Expected</div>
                     <div className="space-y-2">
-                      {MOCK_USERS.filter(u => !u.is_online).map((user) => (
+                      {MOCK_USERS.filter((u) => !u.is_online).map((user) => (
                         <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                          <div className="relative">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                              <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                            </Avatar>
-                            <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background bg-gray-400" />
-                          </div>
+                          <InitialsAvatar id={user.id} name={user.display_name} online={false} />
                           <div className="flex-1">
                             <div className="font-medium">{user.display_name}</div>
                             <div className="text-xs text-muted-foreground">Offline</div>
@@ -375,7 +337,6 @@ export function PreCallPage({
             </CardContent>
           </Card>
 
-
           {/* Call Actions */}
           <Card>
             <CardHeader>
@@ -383,28 +344,16 @@ export function PreCallPage({
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
-                <Button 
-                  onClick={() => {
-                    console.log('🎯 Join Call Now button clicked!')
-                    console.log('📋 onJoinCall function:', onJoinCall)
-                    console.log('🎯 Calling onJoinCall...')
-                    onJoinCall()
-                    console.log('✅ onJoinCall called successfully')
-                  }}
+                <Button
+                  onClick={() => onJoinCall()}
                   className="flex items-center gap-2 bg-primary hover:bg-primary/90 flex-1"
                 >
                   <Play className="h-4 w-4" />
                   Join Call Now
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
-                  onClick={() => {
-                    console.log('🎯 Invite More button clicked!')
-                    console.log('📋 onInviteUsers function:', onInviteUsers)
-                    console.log('🎯 Setting showInviteModal to true')
-                    setShowInviteModal(true)
-                    console.log('✅ Invite modal opened')
-                  }}
+                  onClick={() => setShowInviteModal(true)}
                   className="flex items-center gap-2 flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -418,7 +367,7 @@ export function PreCallPage({
           </Card>
         </div>
 
-        {/* Call Type Specific Content */}
+        {/* Call Type / Demo Specific Content */}
         <div className="space-y-6">
           {isDemoRoom && (
             <Card>
@@ -433,7 +382,7 @@ export function PreCallPage({
                   <div className="text-sm font-medium">About This Call</div>
                   <div className="text-xs text-muted-foreground space-y-1">
                     <div>• Nick built the initial Resourceful platform as a solo non-technical founder</div>
-                    <div>• Rishi and Arjun (NexFlow) have been embedded in the codebase for 3 months</div>
+                    <div>• Rishi Yedavalli and Arjun Dixit (NexFlow, co-founders) have been embedded in the codebase for 3 months</div>
                     <div>• This call reviews what's been built and what's coming next</div>
                   </div>
                 </div>
@@ -458,7 +407,7 @@ export function PreCallPage({
             </Card>
           )}
 
-          {!isDemoRoom && meeting.meeting_type === 'team-sync' && (
+          {!isDemoRoom && meeting.meeting_type === "team-sync" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -495,7 +444,7 @@ export function PreCallPage({
             </Card>
           )}
 
-          {meeting.meeting_type === 'strategy' && (
+          {meeting.meeting_type === "strategy" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -532,7 +481,7 @@ export function PreCallPage({
             </Card>
           )}
 
-          {meeting.meeting_type === 'co-creation' && (
+          {meeting.meeting_type === "co-creation" && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -586,8 +535,6 @@ export function PreCallPage({
             <CardContent>
               <div className="max-h-64 overflow-auto space-y-2 mb-4">
                 {activeParticipants.map((user: any) => {
-                  // For demo participants (no .is_online field) assume online.
-                  // For mock users, honor their is_online flag.
                   const isOnline = user.is_online ?? true
                   return (
                     <div
@@ -595,24 +542,14 @@ export function PreCallPage({
                       onClick={() => toggleUser(user.id)}
                       className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors ${
                         selectedUsers.has(user.id)
-                          ? 'bg-primary/20 border border-primary'
-                          : 'hover:bg-muted'
+                          ? "bg-primary/20 border border-primary"
+                          : "hover:bg-muted"
                       }`}
                     >
-                      <div className="relative">
-                        <Avatar className="h-10 w-10">
-                          <AvatarImage src={user.avatar_url} alt={user.display_name} />
-                          <AvatarFallback>{user.display_name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
-                          isOnline ? 'bg-green-500' : 'bg-gray-400'
-                        }`} />
-                      </div>
+                      <InitialsAvatar id={user.id} name={user.display_name} online={isOnline} />
                       <div className="flex-1">
                         <div className="font-medium">{user.display_name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {isOnline ? 'Online' : 'Offline'}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{user.role ?? (isOnline ? "Online" : "Offline")}</div>
                       </div>
                       {selectedUsers.has(user.id) && (
                         <Check className="h-5 w-5 text-primary" />
@@ -625,12 +562,12 @@ export function PreCallPage({
                 <Button variant="outline" className="flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700" onClick={() => setShowInviteModal(false)}>
                   Cancel
                 </Button>
-                <Button 
-                  className="flex-1" 
+                <Button
+                  className="flex-1"
                   onClick={handleInvite}
                   disabled={selectedUsers.size === 0}
                 >
-                  Invite {selectedUsers.size > 0 ? `(${selectedUsers.size})` : ''}
+                  Invite {selectedUsers.size > 0 ? `(${selectedUsers.size})` : ""}
                 </Button>
               </div>
             </CardContent>
