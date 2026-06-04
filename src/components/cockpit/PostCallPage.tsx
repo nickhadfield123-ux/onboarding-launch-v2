@@ -139,7 +139,7 @@ export function PostCallPage({
   const postCallParticipants = isDemoRoom ? DEMO_PARTICIPANTS : MOCK_USERS
 
   return (
-    <div className="space-y-8 text-white">
+    <div className="space-y-8 text-white bg-slate-900 min-h-full">
       {/* Meeting Header — Return to Hub left, Back to Hub right */}
       <div className="flex items-center justify-between pt-2">
         <Button
@@ -455,14 +455,15 @@ export function PostCallPage({
               <CardContent>
                 <div className="space-y-2">
                   {postCallParticipants.map((user) => {
-                    // Single-line 'Name · Company [· Host]' label. Renders
+                    // Single-line 'Name · Company' label. Renders
                     // 'Rizz · AI' for the AI slot, 'Rishi · NexFlow' /
                     // 'Arjun · NexFlow' for the NexFlow folks, and
-                    // 'Nick · Resourceful · Host' for the host. No
-                    // separate badge so the line has all the room it
-                    // needs and never truncates.
+                    // 'Nick · Resourceful' for the host. No separate
+                    // badge so the line has all the room it needs.
+                    // break-words lets the line wrap to a second
+                    // line on very narrow viewports rather than
+                    // truncating to "...".
                     const role = (user as any).role as string | undefined
-                    const isHost = role === "Resourceful, Founder"
                     const shortCompany = role?.startsWith("NexFlow")
                       ? "NexFlow"
                       : role?.startsWith("Resourceful")
@@ -470,17 +471,15 @@ export function PostCallPage({
                       : role === "AI Assistant"
                       ? "AI"
                       : ""
-                    const line = isHost
-                      ? `${user.display_name} · ${shortCompany} · Host`
-                      : shortCompany
+                    const line = shortCompany
                       ? `${user.display_name} · ${shortCompany}`
                       : user.display_name
                     return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                        <Avatar className="h-8 w-8">
+                        <Avatar className="h-8 w-8 shrink-0">
                           <AvatarFallback>{user.display_name[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0 font-medium text-slate-100 truncate">
+                        <div className="flex-1 min-w-0 font-medium text-slate-100 break-words">
                           {line}
                         </div>
                       </div>

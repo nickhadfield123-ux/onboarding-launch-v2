@@ -475,13 +475,14 @@ export function PreCallPage({
               <CardContent>
                 <div className="space-y-2">
                   {DEMO_PARTICIPANTS.map((user) => {
-                    // Single-line 'Name · Company [· Host]' label. Renders
+                    // Single-line 'Name · Company' label. Renders
                     // 'Rizz · AI' for the AI slot, 'Rishi · NexFlow' /
                     // 'Arjun · NexFlow' for the NexFlow folks, and
-                    // 'Nick · Resourceful · Host' for the host. No
-                    // separate badge so the line has all the room it
-                    // needs and never truncates.
-                    const isHost = user.status.includes("Host")
+                    // 'Nick · Resourceful' for the host. No separate
+                    // badge so the line has all the room it needs.
+                    // break-words lets the line wrap to a second
+                    // line on very narrow viewports rather than
+                    // truncating to "...".
                     const shortCompany = user.role.startsWith("NexFlow")
                       ? "NexFlow"
                       : user.role.startsWith("Resourceful")
@@ -489,15 +490,13 @@ export function PreCallPage({
                       : user.role === "AI Assistant"
                       ? "AI"
                       : ""
-                    const line = isHost
-                      ? `${user.display_name} · ${shortCompany} · Host`
-                      : shortCompany
+                    const line = shortCompany
                       ? `${user.display_name} · ${shortCompany}`
                       : user.display_name
                     return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
                         <InitialsAvatar id={user.id} name={user.display_name} online={!!user.is_online} />
-                        <div className="flex-1 min-w-0 font-medium text-slate-100 truncate">
+                        <div className="flex-1 min-w-0 font-medium text-slate-100 break-words">
                           {line}
                         </div>
                       </div>
