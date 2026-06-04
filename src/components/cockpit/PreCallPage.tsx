@@ -13,7 +13,6 @@ import {
   Link2,
   Copy,
   Check,
-  ChevronRight,
   UserPlus,
   Play,
   MapPin,
@@ -21,6 +20,16 @@ import {
   FileText,
   Home
 } from "lucide-react"
+
+// Agenda items for the demo build-review call. Used in the
+// pre-call Agenda section and the post-call Rizz summary.
+const DEMO_AGENDA = [
+  "Introductions — Nick, Rishi & Arjun (NexFlow)",
+  "Platform demo — Rizz on a live call",
+  "NexFlow infrastructure update — 3 months in the codebase",
+  "What's coming — autonomous agents, contributor onboarding, scale",
+  "Open discussion & next steps",
+]
 
 // Demo roster for the Resourceful × NexFlow build-review room.
 // When the meeting id starts with "meeting-temp-" the PreCallPage
@@ -162,28 +171,21 @@ export function PreCallPage({
   }
 
   return (
-    <div className="space-y-6 text-white">
+    <div className="space-y-8 text-white">
       {/* Meeting Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="default"
-            onClick={() => {
-              const hubUrl = getHubUrl()
-              window.location.href = hubUrl
-            }}
-            className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700 min-w-[140px]"
-          >
-            <Home className="h-4 w-4" />
-            Return to Hub
-          </Button>
-        </div>
-
-        <div className="flex-1 space-y-2 mx-6">
-          <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
-          {meeting.description && <p className="text-muted-foreground">{meeting.description}</p>}
-        </div>
+      <div className="flex items-center justify-between pt-2">
+        <Button
+          variant="outline"
+          size="default"
+          onClick={() => {
+            const hubUrl = getHubUrl()
+            window.location.href = hubUrl
+          }}
+          className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+        >
+          <Home className="h-4 w-4" />
+          Return to Hub
+        </Button>
 
         <div className="flex gap-2">
           <Button
@@ -205,79 +207,272 @@ export function PreCallPage({
             </svg>
             Join Call
           </button>
-
-          <Button
-            variant="secondary"
-            onClick={() => {
-              const hubUrl = getHubUrl()
-              window.location.href = hubUrl
-            }}
-            className="flex items-center gap-2 bg-slate-700 text-white hover:bg-slate-600"
-          >
-            <ChevronRight className="h-4 w-4" />
-            Cancel
-          </Button>
         </div>
       </div>
+
+      {/* Title block — demo gets spacious treatment, generic gets the original h1 */}
+      {isDemoRoom ? (
+        <div className="space-y-2 py-6 border-b border-slate-700/50">
+          <h1 className="text-4xl font-bold tracking-tight text-white">{displayTitle}</h1>
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-300">
+            <Badge variant="outline" className="border-slate-600 text-slate-200">
+              Upcoming Call
+            </Badge>
+            <span>·</span>
+            <span>
+              {new Date(meeting.start_time).toLocaleString([], {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+            <span>·</span>
+            <span>
+              {Math.round(
+                (new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) /
+                  (1000 * 60)
+              )}{" "}
+              min
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 space-y-2 mx-6">
+          <h1 className="text-2xl font-bold text-white">{displayTitle}</h1>
+          {meeting.description && <p className="text-muted-foreground">{meeting.description}</p>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Room Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Link2 className="h-5 w-5" />
-                Room Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-                <div className="flex-1">
-                  <div className="text-sm text-muted-foreground">Room URL</div>
-                  <div className="font-mono text-sm">{roomUrl}</div>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onCopyLink()}
-                  className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-                >
-                  <Copy className="h-4 w-4" />
-                  {isLinkCopied ? "Copied!" : "Copy"}
-                </Button>
-              </div>
+          {isDemoRoom ? (
+            <>
+              {/* Agenda — the primary content for the demo build-review */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <FileText className="h-6 w-6" />
+                    Agenda
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ol className="space-y-4">
+                    {DEMO_AGENDA.map((item, idx) => (
+                      <li key={idx} className="flex gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-slate-700 text-slate-200 text-sm font-semibold flex items-center justify-center">
+                          {idx + 1}
+                        </div>
+                        <div className="text-base text-slate-100 leading-relaxed pt-1">{item}</div>
+                      </li>
+                    ))}
+                  </ol>
+                </CardContent>
+              </Card>
 
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>Location: Virtual</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>
-                    Duration:{" "}
-                    {Math.round(
-                      (new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) /
-                        (1000 * 60)
-                    )}{" "}
-                    min
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {/* Call Actions — same as before, demo gets Join Call Now + Invite */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Call Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => onJoinCall()}
+                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 flex-1"
+                    >
+                      <Play className="h-4 w-4" />
+                      Join Call Now
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowInviteModal(true)}
+                      className="flex items-center gap-2 flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Invite More
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    The call will start in a separate window. You can invite more people before joining.
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Participants */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Participants
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isDemoRoom ? (
+              {/* Room Information — moved to the bottom, smaller and understated */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-sm text-slate-400">
+                    <Link2 className="h-4 w-4" />
+                    Room Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-slate-400">Room URL</div>
+                      <div className="font-mono text-xs text-slate-300 truncate">{roomUrl}</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCopyLink()}
+                      className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700 shrink-0"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      {isLinkCopied ? "Copied!" : "Copy"}
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" />
+                      <span>Virtual</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{DEMO_PARTICIPANTS.length} participants</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <>
+              {/* Room Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Link2 className="h-5 w-5" />
+                    Room Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                    <div className="flex-1">
+                      <div className="text-sm text-muted-foreground">Room URL</div>
+                      <div className="font-mono text-sm">{roomUrl}</div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onCopyLink()}
+                      className="flex items-center gap-2 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                    >
+                      <Copy className="h-4 w-4" />
+                      {isLinkCopied ? "Copied!" : "Copy"}
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      <span>Location: Virtual</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span>
+                        Duration:{" "}
+                        {Math.round(
+                          (new Date(meeting.end_time).getTime() - new Date(meeting.start_time).getTime()) /
+                            (1000 * 60)
+                        )}{" "}
+                        min
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Participants — generic rooms keep participants in the main column */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    Participants
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm font-medium text-muted-foreground mb-2">Online Now</div>
+                      <div className="space-y-2">
+                        {MOCK_USERS.filter((u) => u.is_online).map((user) => (
+                          <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
+                            <InitialsAvatar id={user.id} name={user.display_name} online />
+                            <div className="flex-1">
+                              <div className="font-medium">{user.display_name}</div>
+                              <div className="text-xs text-muted-foreground">Online</div>
+                            </div>
+                            <Badge variant="secondary" className="text-xs">Host</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="text-sm font-medium text-muted-foreground mb-2">Expected</div>
+                      <div className="space-y-2">
+                        {MOCK_USERS.filter((u) => !u.is_online).map((user) => (
+                          <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
+                            <InitialsAvatar id={user.id} name={user.display_name} online={false} />
+                            <div className="flex-1">
+                              <div className="font-medium">{user.display_name}</div>
+                              <div className="text-xs text-muted-foreground">Offline</div>
+                            </div>
+                            <Badge variant="outline" className="text-xs">Attendee</Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Call Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Call Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={() => onJoinCall()}
+                      className="flex items-center gap-2 bg-primary hover:bg-primary/90 flex-1"
+                    >
+                      <Play className="h-4 w-4" />
+                      Join Call Now
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowInviteModal(true)}
+                      className="flex items-center gap-2 flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Invite More
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">
+                    The call will start in a separate window. You can invite more people before joining.
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+
+        {/* Right column — Participants for the demo, original meeting-type context for generic rooms */}
+        <div className="space-y-6">
+          {isDemoRoom ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Participants
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 <div className="space-y-2">
                   {DEMO_PARTICIPANTS.map((user) => {
                     const isHost = user.status.includes("Host")
@@ -299,115 +494,9 @@ export function PreCallPage({
                     )
                   })}
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Online Now</div>
-                    <div className="space-y-2">
-                      {MOCK_USERS.filter((u) => u.is_online).map((user) => (
-                        <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                          <InitialsAvatar id={user.id} name={user.display_name} online />
-                          <div className="flex-1">
-                            <div className="font-medium">{user.display_name}</div>
-                            <div className="text-xs text-muted-foreground">Online</div>
-                          </div>
-                          <Badge variant="secondary" className="text-xs">Host</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-sm font-medium text-muted-foreground mb-2">Expected</div>
-                    <div className="space-y-2">
-                      {MOCK_USERS.filter((u) => !u.is_online).map((user) => (
-                        <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
-                          <InitialsAvatar id={user.id} name={user.display_name} online={false} />
-                          <div className="flex-1">
-                            <div className="font-medium">{user.display_name}</div>
-                            <div className="text-xs text-muted-foreground">Offline</div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">Attendee</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Call Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Call Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-3">
-                <Button
-                  onClick={() => onJoinCall()}
-                  className="flex items-center gap-2 bg-primary hover:bg-primary/90 flex-1"
-                >
-                  <Play className="h-4 w-4" />
-                  Join Call Now
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowInviteModal(true)}
-                  className="flex items-center gap-2 flex-1 bg-slate-800 border-slate-600 text-white hover:bg-slate-700"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Invite More
-                </Button>
-              </div>
-              <div className="text-xs text-muted-foreground text-center">
-                The call will start in a separate window. You can invite more people before joining.
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Call Type / Demo Specific Content */}
-        <div className="space-y-6">
-          {isDemoRoom && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Team Context
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">About This Call</div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>• Nick built the initial Resourceful platform as a solo non-technical founder</div>
-                    <div>• Rishi Yedavalli and Arjun Dixit (NexFlow, co-founders) have been embedded in the codebase for 3 months</div>
-                    <div>• This call reviews what's been built and what's coming next</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">What We're Covering</div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>• Live demo of the Resourceful platform and Rizz</div>
-                    <div>• NexFlow's contributor onboarding framework in GitHub</div>
-                    <div>• Infrastructure mapping — making the platform scalable</div>
-                    <div>• Autonomous agents — the roadmap ahead</div>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Rizz Has Context On</div>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <div>• Each participant's role and background</div>
-                    <div>• The full Resourceful × NexFlow engagement scope</div>
-                    <div>• Platform architecture and open threads</div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
-          )}
-
-          {!isDemoRoom && meeting.meeting_type === "team-sync" && (
+          ) : meeting.meeting_type === "team-sync" ? (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -442,9 +531,7 @@ export function PreCallPage({
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {meeting.meeting_type === "strategy" && (
+          ) : meeting.meeting_type === "strategy" ? (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -479,9 +566,7 @@ export function PreCallPage({
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {meeting.meeting_type === "co-creation" && (
+          ) : meeting.meeting_type === "co-creation" ? (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -517,7 +602,7 @@ export function PreCallPage({
                 </div>
               </CardContent>
             </Card>
-          )}
+          ) : null}
         </div>
       </div>
 
