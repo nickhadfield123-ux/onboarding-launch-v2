@@ -481,8 +481,12 @@ export function PreCallPage({
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
                         <InitialsAvatar id={user.id} name={user.display_name} online={!!user.is_online} />
                         <div className="flex-1 min-w-0">
+                          {/* Name only — the Host/AI/Attendee badge already
+                              communicates the role-type, and the agenda card
+                              elsewhere shows the full role label, so we
+                              skip the second line here to keep names fully
+                              visible on the right column. */}
                           <div className="font-medium truncate">{user.display_name}</div>
-                          <div className="text-xs text-muted-foreground truncate">{user.role}</div>
                         </div>
                         <Badge
                           variant={isHost ? "secondary" : isAi ? "default" : "outline"}
