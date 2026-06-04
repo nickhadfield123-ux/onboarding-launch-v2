@@ -475,25 +475,31 @@ export function PreCallPage({
               <CardContent>
                 <div className="space-y-2">
                   {DEMO_PARTICIPANTS.map((user) => {
+                    // Single-line 'Name · Company [· Host]' label. Renders
+                    // 'Rizz · AI' for the AI slot, 'Rishi · NexFlow' /
+                    // 'Arjun · NexFlow' for the NexFlow folks, and
+                    // 'Nick · Resourceful · Host' for the host. No
+                    // separate badge so the line has all the room it
+                    // needs and never truncates.
                     const isHost = user.status.includes("Host")
-                    const isAi = user.role === "AI Assistant"
+                    const shortCompany = user.role.startsWith("NexFlow")
+                      ? "NexFlow"
+                      : user.role.startsWith("Resourceful")
+                      ? "Resourceful"
+                      : user.role === "AI Assistant"
+                      ? "AI"
+                      : ""
+                    const line = isHost
+                      ? `${user.display_name} · ${shortCompany} · Host`
+                      : shortCompany
+                      ? `${user.display_name} · ${shortCompany}`
+                      : user.display_name
                     return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
                         <InitialsAvatar id={user.id} name={user.display_name} online={!!user.is_online} />
-                        <div className="flex-1 min-w-0">
-                          {/* Name only — the Host/AI/Attendee badge already
-                              communicates the role-type, and the agenda card
-                              elsewhere shows the full role label, so we
-                              skip the second line here to keep names fully
-                              visible on the right column. */}
-                          <div className="font-medium truncate">{user.display_name}</div>
+                        <div className="flex-1 min-w-0 font-medium text-slate-100 truncate">
+                          {line}
                         </div>
-                        <Badge
-                          variant={isHost ? "secondary" : isAi ? "default" : "outline"}
-                          className="text-xs shrink-0"
-                        >
-                          {isHost ? "Host" : isAi ? "AI" : "Attendee"}
-                        </Badge>
                       </div>
                     )
                   })}

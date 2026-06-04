@@ -38,25 +38,40 @@ import {
   Home
 } from "lucide-react"
 
-// Post-call content for the demo build-review room. Kept as plain
-// string constants so the JSX is clean and the copy is easy to
-// tweak for the demo video.
-const POST_CALL_KEY_MOMENTS = [
-  "Nick walked Rishi and Arjun through the live Resourceful dashboard and the Rizz intro flow end-to-end.",
-  "Rishi mapped the current infrastructure — Next.js, Supabase, Daily.co — and flagged Postgres connection-pool limits under load.",
-  "Arjun demoed NexFlow's GitHub contributor onboarding framework and how it maps to Resourceful's open issues.",
-  "Rizz logged two open architecture threads (multi-tenant data model, agent runtime isolation) and proposed a follow-up doc.",
+// Post-call content for the demo build-review room. The Rizz
+// Summary is the big Rizz-voiced paragraph shown front-and-centre.
+// Key Moments and Action Items are the two prominent numbered
+// lists the viewer sees — Key Moments is what happened, Action
+// Items is what the viewer should do next. Both kept as plain
+// string constants so the copy is easy to tweak for the demo.
+const POST_CALL_RIZZ_SUMMARY = [
+  "Nick introduced Rishi and Arjun from NexFlow, who have been embedded in the Resourceful codebase for three months. The call was a live demonstration of what's been built — showing Rizz operating as a real participant on a call, with context on everyone in the room.",
+  "Rishi spoke to the infrastructure work NexFlow has been doing — mapping the platform architecture so multiple contributors can build simultaneously without stepping on each other. The goal is to turn one founder's code into something a whole community can build on.",
+  "The bigger picture is autonomous agents, contributor onboarding at scale, and a platform that grows itself. This call was ground zero.",
 ]
+const POST_CALL_KEY_MOMENTS = [
+  "Nick demonstrated Rizz operating live on a call — transcribing, advising, and knowing every participant",
+  "Rishi shared three months of infrastructure work embedded in the Resourceful codebase",
+  "The team discussed turning a solo founder's prototype into a platform anyone can build on",
+  "Autonomous agents and contributor onboarding at scale confirmed as the next layer",
+]
+// Action Items here are reframed for the *viewer* of the demo
+// video (calls to action), not internal team todos. That's why
+// the language is second-person: "Watch the full deck…",
+// "Message Nick…", etc.
+const POST_CALL_ACTION_ITEMS = [
+  "Watch the full deck — see the vision behind what you just saw",
+  "Stay tuned — this is ground zero, developments are moving fast",
+  "Message Nick — if something resonated, start the conversation",
+  "Set up a call — join the founding round or just find out more",
+]
+// Kept for the Decisions card on the post-call page (still useful
+// internal context, just less prominent than the viewer-facing
+// Action Items card).
 const POST_CALL_DECISIONS = [
   "NexFlow continues as embedded contributors for the next quarter, with a focus on the agent runtime.",
   "Infrastructure mapping doc to be co-authored by Rishi and shared by Friday.",
   "Rizz becomes a first-class call participant in every Resourceful × NexFlow review.",
-]
-const POST_CALL_ACTION_ITEMS = [
-  "Nick: send Rishi the Postgres pool config so he can size the next migration.",
-  "Rishi: draft the infrastructure doc and share by Friday.",
-  "Arjun: file the three highest-leverage onboarding issues in the Resourceful repo.",
-  "Rizz: auto-generate a per-call architecture brief ahead of the next review.",
 ]
 
 // Demo roster for the Resourceful × NexFlow build-review room.
@@ -183,18 +198,11 @@ export function PostCallPage({
                   <p className="text-sm text-slate-400">Generated from this call's transcript</p>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  <p className="text-base text-slate-100 leading-relaxed">
-                    Nick and the NexFlow team (Rishi and Arjun) ran a focused 90-minute build
-                    review of the Resourceful platform. Nick walked Rishi and Arjun through
-                    the live dashboard and the Rizz intro flow, Rishi mapped the current
-                    Next.js / Supabase / Daily.co infrastructure and flagged Postgres
-                    connection-pool limits under load, and Arjun demoed NexFlow's GitHub
-                    contributor onboarding framework. Rizz logged two open architecture
-                    threads (multi-tenant data model, agent runtime isolation) and
-                    proposed a follow-up doc. The team agreed to keep NexFlow embedded as
-                    contributors for the next quarter, with a focus on the agent
-                    runtime and a joint infra-mapping doc due Friday.
-                  </p>
+                  {POST_CALL_RIZZ_SUMMARY.map((para, idx) => (
+                    <p key={idx} className="text-base text-slate-100 leading-relaxed">
+                      {para}
+                    </p>
+                  ))}
                 </CardContent>
               </Card>
 
@@ -447,27 +455,34 @@ export function PostCallPage({
               <CardContent>
                 <div className="space-y-2">
                   {postCallParticipants.map((user) => {
-                    const isHost = (user as any).role === "Resourceful, Founder"
-                    const isAi = (user as any).role === "AI Assistant"
+                    // Single-line 'Name · Company [· Host]' label. Renders
+                    // 'Rizz · AI' for the AI slot, 'Rishi · NexFlow' /
+                    // 'Arjun · NexFlow' for the NexFlow folks, and
+                    // 'Nick · Resourceful · Host' for the host. No
+                    // separate badge so the line has all the room it
+                    // needs and never truncates.
+                    const role = (user as any).role as string | undefined
+                    const isHost = role === "Resourceful, Founder"
+                    const shortCompany = role?.startsWith("NexFlow")
+                      ? "NexFlow"
+                      : role?.startsWith("Resourceful")
+                      ? "Resourceful"
+                      : role === "AI Assistant"
+                      ? "AI"
+                      : ""
+                    const line = isHost
+                      ? `${user.display_name} · ${shortCompany} · Host`
+                      : shortCompany
+                      ? `${user.display_name} · ${shortCompany}`
+                      : user.display_name
                     return (
                       <div key={user.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>{user.display_name[0]}</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 min-w-0">
-                          {/* Name only — the Host/AI/Attendee badge already
-                              communicates the role-type; the post-call Rizz
-                              Summary above shows the full role label, so
-                              we skip the second line here to keep names
-                              fully visible on the right column. */}
-                          <div className="font-medium truncate">{user.display_name}</div>
+                        <div className="flex-1 min-w-0 font-medium text-slate-100 truncate">
+                          {line}
                         </div>
-                        <Badge
-                          variant={isHost ? "secondary" : isAi ? "default" : "outline"}
-                          className="text-xs shrink-0"
-                        >
-                          {isHost ? "Host" : isAi ? "AI" : "Attendee"}
-                        </Badge>
                       </div>
                     )
                   })}

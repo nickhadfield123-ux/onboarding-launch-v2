@@ -1,22 +1,78 @@
 @import "tailwindcss";
 
+/*
+ * Resourceful dark theme defaults.
+ *
+ * The app is built dark-first (slate-900 canvas, light text). The
+ * Tailwind v4 @theme block exposes semantic tokens like `bg-card`,
+ * `text-card-foreground`, `bg-muted` that the shared <Card /> component
+ * relies on. We define them here in slate tones so any page that
+ * doesn't add its own wrapper styling (e.g. the post-call page)
+ * still renders the dark Resourceful theme consistently.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0f172a;            /* slate-900 */
+  --foreground: #f1f5f9;            /* slate-100 */
+
+  --card: #1e293b;                  /* slate-800 */
+  --card-foreground: #f1f5f9;        /* slate-100 */
+  --card-border: #334155;           /* slate-700 */
+
+  --popover: #1e293b;               /* slate-800 */
+  --popover-foreground: #f1f5f9;
+
+  --primary: #3b82f6;               /* blue-500 */
+  --primary-foreground: #f8fafc;
+
+  --secondary: #334155;             /* slate-700 */
+  --secondary-foreground: #f1f5f9;
+
+  --muted: #1e293b;                 /* slate-800 */
+  --muted-foreground: #94a3b8;       /* slate-400 */
+
+  --accent: #334155;                /* slate-700 */
+  --accent-foreground: #f1f5f9;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #f8fafc;
+
+  --border: #334155;                /* slate-700 */
+  --input: #334155;
+  --ring: #3b82f6;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-card-border: var(--card-border);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
